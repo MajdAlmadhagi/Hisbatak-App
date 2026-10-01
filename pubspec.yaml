@@ -1,0 +1,47 @@
+name: hisbatak_app
+description: "Hisbatak - Offline Arabic Fintech & Expense Splitting App"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+  # State Management
+  flutter_bloc: ^8.1.6
+  equatable: ^2.0.5
+
+  # Routing & Navigation
+  go_router: ^14.8.0
+
+  # Dependency Injection & Service Locator
+  get_it: ^8.0.3
+
+  # Local Persistence (Offline-First)
+  sqflite: ^2.4.1
+  path: ^1.9.0
+  #path_provider: ^2.1.5
+  #shared_preferences: ^2.3.5
+
+  # UI, Fonts & Charts
+  google_fonts: ^6.2.1
+  intl: ^0.20.2
+  fl_chart: ^0.70.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - stitch_designs/images/

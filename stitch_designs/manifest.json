@@ -1,0 +1,82 @@
+{
+  "projectId": "8743352187682862271",
+  "screens": [
+    {
+      "id": "7fbd7315b1fa4d7fae62c0e17e5e7602",
+      "title": "شاشة البداية - قِسمة",
+      "slug": "01_splash_screen",
+      "html_file": "html/01_splash_screen.html",
+      "image_file": "images/01_splash_screen.png",
+      "width": "780",
+      "height": "1768",
+      "html_size_bytes": 8597,
+      "img_size_bytes": 24378
+    },
+    {
+      "id": "6896b8abcacf42b6a9c9898dc9e394cd",
+      "title": "الرئيسية والميزانية الشخصية",
+      "slug": "02_home_personal_budget",
+      "html_file": "html/02_home_personal_budget.html",
+      "image_file": "images/02_home_personal_budget.png",
+      "width": "780",
+      "height": "2508",
+      "html_size_bytes": 21131,
+      "img_size_bytes": 24502
+    },
+    {
+      "id": "abaf2d254aa84225a079f9b3aad2a6d0",
+      "title": "المجموعات وتقسيم الفواتير",
+      "slug": "03_groups_split_bills",
+      "html_file": "html/03_groups_split_bills.html",
+      "image_file": "images/03_groups_split_bills.png",
+      "width": "780",
+      "height": "2444",
+      "html_size_bytes": 29707,
+      "img_size_bytes": 25132
+    },
+    {
+      "id": "3e2851d85a9f4fbfbf65854299594c45",
+      "title": "إضافة وقسمة المصروف",
+      "slug": "04_add_split_expense",
+      "html_file": "html/04_add_split_expense.html",
+      "image_file": "images/04_add_split_expense.png",
+      "width": "780",
+      "height": "2076",
+      "html_size_bytes": 915873,
+      "img_size_bytes": 31750
+    },
+    {
+      "id": "0b70a89bd77e48bfa211b4786ed4329f",
+      "title": "الإعدادات والتفضيلات المحلية",
+      "slug": "05_settings_local_prefs",
+      "html_file": "html/05_settings_local_prefs.html",
+      "image_file": "images/05_settings_local_prefs.png",
+      "width": "780",
+      "height": "2816",
+      "html_size_bytes": 25810,
+      "img_size_bytes": 19949
+    },
+    {
+      "id": "958e16f09838404b94ba5cdeab3e0df1",
+      "title": "إعداد الملف الشخصي المحلي",
+      "slug": "06_local_profile_setup",
+      "html_file": "html/06_local_profile_setup.html",
+      "image_file": "images/06_local_profile_setup.png",
+      "width": "780",
+      "height": "1824",
+      "html_size_bytes": 915667,
+      "img_size_bytes": 29711
+    },
+    {
+      "id": "598981369e9c40f49eb3098d35b63e93",
+      "title": "Hisbatak Arabic Logo",
+      "slug": "07_hisbatak_arabic_logo",
+      "html_file": "html/07_hisbatak_arabic_logo.html",
+      "image_file": "images/07_hisbatak_arabic_logo.png",
+      "width": "512",
+      "height": "512",
+      "html_size_bytes": 2692,
+      "img_size_bytes": 94881
+    }
+  ]
+}
