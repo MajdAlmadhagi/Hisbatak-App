@@ -23,7 +23,7 @@ class AppStrings {
   static const String localAvatar = 'الصورة الرمزية المحلية';
   static const String fullNameLabel = 'الاسم الكريم';
   static const String phoneNumberLabel = 'رقم الهاتف';
-  static const String defaultUserName = 'مجد المذحجي';
+  static const String defaultUserName = 'مستخدم حسبتك';
   static const String defaultUserEmail = 'tariq.mansour@offline.local';
   static const String defaultCurrencyLabel = 'العملة الافتراضية لمصروفاتك';
   static const String currencyYER = 'ريال يمني (YER)';

@@ -28,18 +28,19 @@ class ProfileLocalDataSourceImpl implements IProfileLocalDataSource {
     if (results.isNotEmpty) {
       return UserProfileModel.fromMap(results.first);
     }
-    // Default fallback
+    // No profile yet (a fresh install): not configured, so the splash
+    // screen sends the user to profile setup.
     return const UserProfileModel(
       id: 'user_me',
-      fullName: 'مجد المذحجي',
-      email: 'tariq.mansour@offline.local',
-      currencyCode: 'SAR',
-      currencySymbol: 'ر.س',
-      monthlyBudgetLimit: 20000.0,
-      currentAvailable: 14850.0,
-      biometricEnabled: true,
+      fullName: '',
+      email: '',
+      currencyCode: 'YER',
+      currencySymbol: 'ر.ي',
+      monthlyBudgetLimit: 0.0,
+      currentAvailable: 0.0,
+      biometricEnabled: false,
       isDarkMode: false,
-      isConfigured: true,
+      isConfigured: false,
     );
   }
 
@@ -94,7 +95,22 @@ abstract class IBudgetLocalDataSource {
   Future<double> getTotalExpenses();
 }
 
+/// The current time as the database stores it: UTC ISO 8601.
+String _nowUtc() => DateTime.now().toUtc().toIso8601String();
+
+/// A transaction row edited on this device: stamped with the edit time and
+/// flagged so the next sync uploads it.
+Map<String, Object?> _editedLocally(Map<String, dynamic> row) => {
+      ...row,
+      'updated_at': _nowUtc(),
+      'deleted_at': null,
+      'is_synced': 0,
+    };
+
 /// Concrete SQLite implementation for Budget Data Source (DIP)
+///
+/// Deleted transactions stay in the table with deleted_at set until the
+/// deletion syncs, so every query here skips them.
 class BudgetLocalDataSourceImpl implements IBudgetLocalDataSource {
   final AppDatabase appDatabase;
 
@@ -105,6 +121,7 @@ class BudgetLocalDataSourceImpl implements IBudgetLocalDataSource {
     final db = await appDatabase.database;
     final results = await db.query(
       'transactions',
+      where: 'deleted_at IS NULL',
       orderBy: 'date_time DESC',
       limit: limit,
     );
@@ -114,7 +131,7 @@ class BudgetLocalDataSourceImpl implements IBudgetLocalDataSource {
   @override
   Future<void> addTransaction(TransactionModel transaction) async {
     final db = await appDatabase.database;
-    await db.insert('transactions', transaction.toMap(),
+    await db.insert('transactions', _editedLocally(transaction.toMap()),
         conflictAlgorithm: ConflictAlgorithm.replace);
 
     // Update profile available budget accordingly
@@ -136,7 +153,8 @@ class BudgetLocalDataSourceImpl implements IBudgetLocalDataSource {
   @override
   Future<void> updateTransaction(TransactionModel transaction) async {
     final db = await appDatabase.database;
-    final oldTxRes = await db.query('transactions', where: 'id = ?', whereArgs: [transaction.id]);
+    final oldTxRes = await db.query('transactions',
+        where: 'id = ? AND deleted_at IS NULL', whereArgs: [transaction.id]);
     if (oldTxRes.isNotEmpty) {
       final oldTx = oldTxRes.first;
       final oldAmount = (oldTx['amount'] as num).toDouble();
@@ -162,13 +180,15 @@ class BudgetLocalDataSourceImpl implements IBudgetLocalDataSource {
       }
     }
 
-    await db.update('transactions', transaction.toMap(), where: 'id = ?', whereArgs: [transaction.id]);
+    await db.update('transactions', _editedLocally(transaction.toMap()),
+        where: 'id = ? AND deleted_at IS NULL', whereArgs: [transaction.id]);
   }
 
   @override
   Future<void> deleteTransaction(String id) async {
     final db = await appDatabase.database;
-    final oldTxRes = await db.query('transactions', where: 'id = ?', whereArgs: [id]);
+    final oldTxRes = await db.query('transactions',
+        where: 'id = ? AND deleted_at IS NULL', whereArgs: [id]);
     if (oldTxRes.isNotEmpty) {
       final oldTx = oldTxRes.first;
       final oldAmount = (oldTx['amount'] as num).toDouble();
@@ -185,16 +205,23 @@ class BudgetLocalDataSourceImpl implements IBudgetLocalDataSource {
         }
         await db.update('user_profile', {'current_available': current}, where: 'id = ?', whereArgs: ['user_me']);
       }
-    }
 
-    await db.delete('transactions', where: 'id = ?', whereArgs: [id]);
+      // Mark instead of delete, so the deletion reaches the server and other devices.
+      final now = _nowUtc();
+      await db.update(
+        'transactions',
+        {'deleted_at': now, 'updated_at': now, 'is_synced': 0},
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    }
   }
 
   @override
   Future<double> getTotalExpenses() async {
     final db = await appDatabase.database;
     final results = await db.rawQuery(
-      "SELECT SUM(amount) as total FROM transactions WHERE type = 'expense'",
+      "SELECT SUM(amount) as total FROM transactions WHERE type = 'expense' AND deleted_at IS NULL",
     );
     if (results.isNotEmpty && results.first['total'] != null) {
       return (results.first['total'] as num).toDouble();
@@ -264,7 +291,7 @@ class GroupLocalDataSourceImpl implements IGroupLocalDataSource {
       'payer_name': expense.payerName,
       'category': expense.category,
       'split_method': expense.splitMethod.name,
-      'date_time': expense.dateTime.toIso8601String(),
+      'date_time': expense.dateTime.toUtc().toIso8601String(),
     });
 
     // Update balances for participants: each other member owes the payer their split

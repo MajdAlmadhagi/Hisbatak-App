@@ -132,7 +132,7 @@ class _AddExpenseBottomSheetState extends State<AddExpenseBottomSheet> {
       paymentMethod: _isSharedBill ? 'فاتورة مشتركة' : 'مدى • بطاقة',
       dateTime: DateTime.now(),
       type: TransactionType.expense,
-      isSynced: true,
+      isSynced: false, // New on this device; the next sync uploads it.
     );
 
     context.read<BudgetBloc>().add(AddPersonalTransactionEvent(transaction));

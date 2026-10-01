@@ -71,7 +71,8 @@ class TransactionModel extends TransactionItem {
       category: map['category'] as String,
       categoryIcon: map['category_icon'] as String,
       paymentMethod: map['payment_method'] as String,
-      dateTime: DateTime.parse(map['date_time'] as String),
+      // Stored in UTC; shown in the device's time zone.
+      dateTime: DateTime.parse(map['date_time'] as String).toLocal(),
       type: (map['type'] == 'income') ? TransactionType.income : TransactionType.expense,
       isSynced: (map['is_synced'] as int) == 1,
     );
@@ -85,7 +86,7 @@ class TransactionModel extends TransactionItem {
       'category': category,
       'category_icon': categoryIcon,
       'payment_method': paymentMethod,
-      'date_time': dateTime.toIso8601String(),
+      'date_time': dateTime.toUtc().toIso8601String(),
       'type': (type == TransactionType.income) ? 'income' : 'expense',
       'is_synced': isSynced ? 1 : 0,
     };
@@ -110,7 +111,7 @@ class GroupModel extends GroupEntity {
       type: map['type'] as String,
       iconName: map['icon_name'] as String,
       memberCount: map['member_count'] as int,
-      createdAt: DateTime.parse(map['created_at'] as String),
+      createdAt: DateTime.parse(map['created_at'] as String).toLocal(),
     );
   }
 
@@ -121,7 +122,7 @@ class GroupModel extends GroupEntity {
       'type': type,
       'icon_name': iconName,
       'member_count': memberCount,
-      'created_at': createdAt.toIso8601String(),
+      'created_at': createdAt.toUtc().toIso8601String(),
     };
   }
 }
