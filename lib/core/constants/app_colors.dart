@@ -6,6 +6,10 @@ import 'package:flutter/material.dart';
 /// SOLID Principle: Single Responsibility Principle (SRP)
 /// Responsible solely for defining centralized theme colors and token constants.
 class AppColors {
+  // Brand Mark (the "ح" logo, launcher icon, and launch screens)
+  static const Color brandNavy = Color(0xFF0B1F3A);
+  static const Color brandGreen = Color(0xFF10B981); // The separated "your share" piece
+
   // Primary Palette
   static const Color primary = Color(0xFF0F172A); // Dark slate navy
   static const Color primaryDark = Color(0xFF0B1120);

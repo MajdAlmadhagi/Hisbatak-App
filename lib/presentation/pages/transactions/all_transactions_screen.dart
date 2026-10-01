@@ -8,6 +8,7 @@ import '../../../core/utils/formatters.dart';
 import '../../../domain/entities/transaction_item.dart';
 import '../../bloc/budget/budget_bloc.dart';
 import '../../widgets/transaction_details_dialog.dart';
+import '../../widgets/hisbatak_loader.dart';
 import '../../widgets/transaction_list_tile.dart';
 
 /// [AllTransactionsScreen] displays the full transaction history with live search,
@@ -151,7 +152,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
         builder: (context, state) {
           if (state is BudgetLoading) {
             return const Center(
-              child: CircularProgressIndicator(color: AppColors.emerald),
+              child: HisbatakLoader(),
             );
           }
 
