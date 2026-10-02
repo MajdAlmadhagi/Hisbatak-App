@@ -1,11 +1,10 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../bloc/profile/profile_bloc.dart';
-import '../../widgets/app_logo_widget.dart';
+import '../../widgets/hisbatak_loader.dart';
 
 /// [SplashScreen] renders the initial startup screen matching Stitch Screen 1 (شاشة البداية - قِسمة).
 ///
@@ -35,19 +34,37 @@ class _SplashScreenState extends State<SplashScreen>
       CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
     );
     _controller.forward();
+    _navigateWhenReady();
+  }
 
-    // Check if user profile is already configured
-    Timer(const Duration(seconds: 10), () {
-      if (mounted) {
-        final profileState = context.read<ProfileBloc>().state;
-        if (profileState is ProfileLoaded &&
-            profileState.profile.isConfigured) {
-          context.go('/home');
-        } else {
-          context.go('/setup-profile');
-        }
-      }
-    });
+  /// Shortest time the splash stays up, so it reads as a deliberate screen
+  /// rather than a flash: about when the loader finishes drawing the "ح".
+  static const _minimumDisplay = Duration(milliseconds: 1600);
+
+  /// Upper bound if the local database never answers.
+  static const _maximumWait = Duration(seconds: 10);
+
+  /// Leaves as soon as the profile has loaded (and the minimum time has
+  /// passed): to home if it is configured, otherwise to profile setup.
+  Future<void> _navigateWhenReady() async {
+    final profileState = _waitForProfile(context.read<ProfileBloc>());
+    await Future<void>.delayed(_minimumDisplay);
+    final state = await profileState;
+    if (!mounted) return;
+    if (state is ProfileLoaded && state.profile.isConfigured) {
+      context.go('/home');
+    } else {
+      context.go('/setup-profile');
+    }
+  }
+
+  Future<ProfileState> _waitForProfile(ProfileBloc bloc) {
+    bool isSettled(ProfileState state) =>
+        state is ProfileLoaded || state is ProfileError;
+    if (isSettled(bloc.state)) return Future.value(bloc.state);
+    return bloc.stream
+        .firstWhere(isSettled)
+        .timeout(_maximumWait, onTimeout: () => bloc.state);
   }
 
   @override
@@ -60,7 +77,8 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0D1527),
+      // Same navy as the native launch screen, so the handoff is seamless.
+      backgroundColor: AppColors.brandNavy,
       body: SafeArea(
         child: FadeTransition(
           opacity: _fadeAnimation,
@@ -121,7 +139,8 @@ class _SplashScreenState extends State<SplashScreen>
                   scale: _scaleAnimation,
                   child: Column(
                     children: [
-                      const AppLogoWidget(size: 110),
+                      // The animated "ح" is both the logo and the loading indicator.
+                      const HisbatakLoader(size: 110, color: Colors.white),
                       const SizedBox(height: 28),
 
                       // Title
@@ -166,40 +185,6 @@ class _SplashScreenState extends State<SplashScreen>
                           color: Color(0xFF94A3B8),
                           height: 1.5,
                         ),
-                      ),
-                      const SizedBox(height: 20),
-
-                      // 3 Progress Dots
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            width: 8,
-                            height: 8,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFFEF4444),
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            width: 8,
-                            height: 8,
-                            decoration: const BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            width: 8,
-                            height: 8,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF10B981),
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        ],
                       ),
                     ],
                   ),

@@ -6,6 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../bloc/groups/groups_bloc.dart';
 import '../add_expense/add_expense_bottom_sheet.dart';
 import '../../widgets/debt_summary_card.dart';
+import '../../widgets/hisbatak_loader.dart';
 import '../../widgets/member_settle_card.dart';
 import '../../widgets/offline_status_pill.dart';
 
@@ -45,7 +46,7 @@ class GroupsScreen extends StatelessWidget {
         child: BlocBuilder<GroupsBloc, GroupsState>(
           builder: (context, state) {
             if (state is GroupsLoading) {
-              return const Center(child: CircularProgressIndicator(color: AppColors.emerald));
+              return const Center(child: HisbatakLoader());
             } else if (state is GroupsLoaded) {
               return _buildContent(context, state);
             } else if (state is GroupsError) {

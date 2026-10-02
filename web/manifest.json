@@ -1,11 +1,13 @@
 {
-    "name": "hisbatak_app",
-    "short_name": "hisbatak_app",
+    "name": "حسبتك | Hisbatak",
+    "short_name": "حسبتك",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#0B1F3A",
+    "theme_color": "#0B1F3A",
+    "description": "ميزانيتك الشخصية وقطّاتك المشتركة في مكان واحد، بدون إنترنت.",
+    "lang": "ar",
+    "dir": "rtl",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

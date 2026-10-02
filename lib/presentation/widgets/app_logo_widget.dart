@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
+import 'hisbatak_mark.dart';
 
-/// [AppLogoWidget] renders the Hisbatak wallet logo (matching Stitch Screen 7 & Splash branding).
+/// [AppLogoWidget] renders the Hisbatak app logo: the "ح" mark on the navy
+/// rounded tile, exactly as it appears on the launcher icon.
 ///
 /// SOLID Principle: Single Responsibility Principle (SRP)
 class AppLogoWidget extends StatelessWidget {
@@ -25,9 +27,11 @@ class AppLogoWidget extends StatelessWidget {
         Container(
           width: size,
           height: size,
+          alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: const Color(0xFF131B2E),
-            borderRadius: BorderRadius.circular(size * 0.28),
+            color: AppColors.brandNavy,
+            // Same corner radius as the launcher icon (230 / 1024).
+            borderRadius: BorderRadius.circular(size * 0.225),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.15),
@@ -36,77 +40,8 @@ class AppLogoWidget extends StatelessWidget {
               ),
             ],
           ),
-          padding: EdgeInsets.all(size * 0.18),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              // Wallet Outline
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(size * 0.16),
-                  border: Border.all(color: Colors.white, width: size * 0.04),
-                ),
-              ),
-              // Top Dots (Green & Red)
-              Positioned(
-                top: 0,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: size * 0.12,
-                      height: size * 0.12,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF10B981),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    SizedBox(width: size * 0.2),
-                    Container(
-                      width: size * 0.12,
-                      height: size * 0.12,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFEF4444),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // Center Emerald Stripe
-              Positioned(
-                top: size * 0.22,
-                left: 0,
-                right: 0,
-                child: Container(
-                  height: size * 0.04,
-                  color: AppColors.emeraldLight,
-                ),
-              ),
-              // Wallet Button/Latch
-              Positioned(
-                right: size * 0.04,
-                top: size * 0.18,
-                child: Container(
-                  width: size * 0.14,
-                  height: size * 0.14,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(size * 0.04),
-                  ),
-                  alignment: Alignment.center,
-                  child: Container(
-                    width: size * 0.05,
-                    height: size * 0.05,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF131B2E),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
+          // The mark takes the same share of the tile as on the launcher icon (660 / 1024).
+          child: HisbatakMark(size: size * 0.645, color: Colors.white),
         ),
         if (showText) ...[
           const SizedBox(height: 12),

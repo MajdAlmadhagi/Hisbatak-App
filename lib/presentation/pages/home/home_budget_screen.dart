@@ -9,6 +9,7 @@ import '../../bloc/budget/budget_bloc.dart';
 import '../../bloc/profile/profile_bloc.dart';
 import '../../widgets/budget_card.dart';
 import '../../widgets/expense_donut_chart.dart';
+import '../../widgets/hisbatak_loader.dart';
 import '../../widgets/offline_status_pill.dart';
 import '../../widgets/transaction_details_dialog.dart';
 import '../../widgets/transaction_list_tile.dart';
@@ -28,7 +29,7 @@ class HomeBudgetScreen extends StatelessWidget {
           builder: (context, state) {
             if (state is BudgetLoading) {
               return const Center(
-                  child: CircularProgressIndicator(color: AppColors.emerald));
+                  child: HisbatakLoader());
             } else if (state is BudgetLoaded) {
               return _buildContent(context, state);
             } else if (state is BudgetError) {
