@@ -36,7 +36,7 @@ class AppDatabase {
     //open the database and create tables if not exists for first time , and upgrade the database if the version is greater than the current version
     return await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -76,6 +76,85 @@ class AppDatabase {
     )
   ''';
 
+  // The group tables carry the same sync columns as transactions. They have
+  // no foreign keys: rows pulled from the server can arrive in any order
+  // (a member before its group). Member counts and balances aren't stored;
+  // GroupLocalDataSourceImpl computes them.
+  static const _createGroupsTable = '''
+    CREATE TABLE groups (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      type TEXT NOT NULL, -- 'work', 'home', 'trip', 'other'
+      icon_name TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      deleted_at TEXT,
+      is_synced INTEGER NOT NULL DEFAULT 0
+    )
+  ''';
+
+  static const _createGroupMembersTable = '''
+    CREATE TABLE group_members (
+      id TEXT PRIMARY KEY,
+      group_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      avatar_url TEXT,
+      note TEXT, -- latest activity, for display
+      last_activity TEXT,
+      updated_at TEXT NOT NULL,
+      deleted_at TEXT,
+      is_synced INTEGER NOT NULL DEFAULT 0
+    )
+  ''';
+
+  static const _createGroupExpensesTable = '''
+    CREATE TABLE group_expenses (
+      id TEXT PRIMARY KEY,
+      group_id TEXT NOT NULL,
+      title TEXT NOT NULL,
+      total_amount REAL NOT NULL,
+      payer_id TEXT NOT NULL, -- 'user_me' when you paid
+      payer_name TEXT NOT NULL,
+      category TEXT NOT NULL,
+      split_method TEXT NOT NULL, -- 'equal', 'percentage', 'custom'
+      date_time TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      deleted_at TEXT,
+      is_synced INTEGER NOT NULL DEFAULT 0
+    )
+  ''';
+
+  // Each participant's share of a shared expense. Balances are computed from
+  // these and from settlements, so two devices adding expenses offline both
+  // count once they sync.
+  static const _createExpenseSplitsTable = '''
+    CREATE TABLE expense_splits (
+      id TEXT PRIMARY KEY, -- '<expense_id>:<member_id>'
+      expense_id TEXT NOT NULL,
+      group_id TEXT NOT NULL,
+      member_id TEXT NOT NULL, -- 'user_me' for you
+      amount REAL NOT NULL,
+      percentage REAL NOT NULL,
+      is_payer INTEGER NOT NULL,
+      updated_at TEXT NOT NULL,
+      deleted_at TEXT,
+      is_synced INTEGER NOT NULL DEFAULT 0
+    )
+  ''';
+
+  static const _createSettlementsTable = '''
+    CREATE TABLE settlements (
+      id TEXT PRIMARY KEY,
+      group_id TEXT NOT NULL,
+      member_id TEXT NOT NULL,
+      amount REAL NOT NULL, -- positive: the member paid you; negative: you paid the member
+      date_time TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      deleted_at TEXT,
+      is_synced INTEGER NOT NULL DEFAULT 0
+    )
+  ''';
+
   ///Function of creating tables (will be triggered/invoked when the app is installed for the first time)
   FutureOr<void> _onCreate(Database db, int version) async {
     // 1. User Profile Table
@@ -85,46 +164,15 @@ class AppDatabase {
     await db.execute(_createTransactionsTable);
 
     // 3. Groups Table
-    await db.execute('''
-      CREATE TABLE groups (
-        id TEXT PRIMARY KEY,
-        name TEXT NOT NULL,
-        type TEXT NOT NULL,
-        icon_name TEXT NOT NULL,
-        member_count INTEGER NOT NULL,
-        created_at TEXT NOT NULL
-      )
-    ''');
+    await db.execute(_createGroupsTable);
 
     // 4. Group Members Table
-    await db.execute('''
-      CREATE TABLE group_members (
-        id TEXT PRIMARY KEY,
-        group_id TEXT NOT NULL,
-        name TEXT NOT NULL,
-        avatar_url TEXT,
-        balance REAL NOT NULL, -- positive: owes user, negative: user owes them, 0: balanced
-        note TEXT,
-        last_activity TEXT,
-        FOREIGN KEY (group_id) REFERENCES groups (id) ON DELETE CASCADE
-      )
-    ''');
+    await db.execute(_createGroupMembersTable);
 
-    // 5. Group Shared Expenses Table
-    await db.execute('''
-      CREATE TABLE group_expenses (
-        id TEXT PRIMARY KEY,
-        group_id TEXT NOT NULL,
-        title TEXT NOT NULL,
-        total_amount REAL NOT NULL,
-        payer_id TEXT NOT NULL,
-        payer_name TEXT NOT NULL,
-        category TEXT NOT NULL,
-        split_method TEXT NOT NULL, -- 'equal', 'percentage', 'custom'
-        date_time TEXT NOT NULL,
-        FOREIGN KEY (group_id) REFERENCES groups (id) ON DELETE CASCADE
-      )
-    ''');
+    // 5. Group Shared Expenses Table, with each participant's share and the settlements
+    await db.execute(_createGroupExpensesTable);
+    await db.execute(_createExpenseSplitsTable);
+    await db.execute(_createSettlementsTable);
 
     // 6. Seed demo data matching the Stitch designs, in debug builds only:
     // real users start empty, and the demo rows must never sync to their accounts.
@@ -134,6 +182,7 @@ class AppDatabase {
   ///Upgrades a database created by an older app version, step by step.
   FutureOr<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) await _upgradeToV2(db);
+    if (oldVersion < 3) await _upgradeToV3(db);
   }
 
   /// v2: makes the database ready for sync.
@@ -169,6 +218,112 @@ class AppDatabase {
     await _convertDatesToUtc(db, 'transactions', 'date_time');
     await _convertDatesToUtc(db, 'groups', 'created_at');
     await _convertDatesToUtc(db, 'group_expenses', 'date_time');
+  }
+
+  /// v3: group balances are computed from each expense's splits and from
+  /// settlements instead of being stored, so expenses added on two devices
+  /// offline both count once they sync.
+  /// - new tables: expense_splits and settlements.
+  /// - the group tables gain the sync columns and lose the stored
+  ///   member_count and balance (both are computed now).
+  /// - each member's stored balance carries over as an opening balance.
+  Future<void> _upgradeToV3(Database db) async {
+    final now = DateTime.now().toUtc().toIso8601String();
+
+    await db.execute('ALTER TABLE groups RENAME TO groups_v2');
+    await db.execute(_createGroupsTable);
+    await db.rawInsert('''
+      INSERT INTO groups (id, name, type, icon_name, created_at, updated_at, deleted_at, is_synced)
+      SELECT id, name, type, icon_name, created_at, ?, NULL, 0
+      FROM groups_v2
+    ''', [now]);
+
+    await db.execute('ALTER TABLE group_members RENAME TO group_members_v2');
+    await db.execute(_createGroupMembersTable);
+    await db.rawInsert('''
+      INSERT INTO group_members (id, group_id, name, avatar_url, note, last_activity,
+                                 updated_at, deleted_at, is_synced)
+      SELECT id, group_id, name, avatar_url, note, last_activity, ?, NULL, 0
+      FROM group_members_v2
+    ''', [now]);
+
+    await db.execute('ALTER TABLE group_expenses RENAME TO group_expenses_v2');
+    await db.execute(_createGroupExpensesTable);
+    await db.rawInsert('''
+      INSERT INTO group_expenses (id, group_id, title, total_amount, payer_id, payer_name,
+                                  category, split_method, date_time, updated_at, deleted_at, is_synced)
+      SELECT id, group_id, title, total_amount, payer_id, payer_name,
+             category, split_method, date_time, ?, NULL, 0
+      FROM group_expenses_v2
+    ''', [now]);
+
+    await db.execute(_createExpenseSplitsTable);
+    await db.execute(_createSettlementsTable);
+
+    // v2 never saved splits, so the old expenses add nothing to the computed
+    // balances; the stored balance already includes them.
+    final balances = await db.query(
+      'group_members_v2',
+      columns: ['id', 'group_id', 'name', 'balance'],
+      where: 'balance != 0',
+    );
+    for (final member in balances) {
+      await _insertOpeningBalance(
+        db,
+        groupId: member['group_id'] as String,
+        memberId: member['id'] as String,
+        memberName: member['name'] as String,
+        balance: (member['balance'] as num).toDouble(),
+        at: now,
+        synced: false,
+      );
+    }
+
+    await db.execute('DROP TABLE group_expenses_v2');
+    await db.execute('DROP TABLE group_members_v2');
+    await db.execute('DROP TABLE groups_v2');
+  }
+
+  /// Records a balance that existed before splits were saved (or a demo
+  /// balance) as one past expense with a single split, so it adds up like any
+  /// other expense: positive means the member owes you.
+  static Future<void> _insertOpeningBalance(
+    DatabaseExecutor db, {
+    required String groupId,
+    required String memberId,
+    required String memberName,
+    required double balance,
+    required String at,
+    required bool synced,
+  }) async {
+    if (balance == 0) return;
+    final memberOwesYou = balance > 0;
+    final expenseId = 'opening_${groupId}_$memberId';
+    final debtorId = memberOwesYou ? memberId : 'user_me';
+    final syncColumns = {'updated_at': at, 'deleted_at': null, 'is_synced': synced ? 1 : 0};
+
+    await db.insert('group_expenses', {
+      'id': expenseId,
+      'group_id': groupId,
+      'title': 'رصيد سابق',
+      'total_amount': balance.abs(),
+      'payer_id': memberOwesYou ? 'user_me' : memberId,
+      'payer_name': memberOwesYou ? 'أنت' : memberName,
+      'category': 'رصيد سابق',
+      'split_method': 'custom',
+      'date_time': at,
+      ...syncColumns,
+    });
+    await db.insert('expense_splits', {
+      'id': '$expenseId:$debtorId',
+      'expense_id': expenseId,
+      'group_id': groupId,
+      'member_id': debtorId,
+      'amount': balance.abs(),
+      'percentage': 100.0,
+      'is_payer': 0,
+      ...syncColumns,
+    });
   }
 
   /// v1 stored dates as DateTime.toIso8601String() of local times: no time
@@ -267,8 +422,9 @@ class AppDatabase {
       'name': 'زملاء العمل',
       'type': 'work',
       'icon_name': 'apartment',
-      'member_count': 4,
       'created_at': DateTime(now.year, now.month, 1).toUtc().toIso8601String(),
+      'updated_at': seededAt,
+      'is_synced': 1,
     });
 
     await db.insert('groups', {
@@ -276,8 +432,9 @@ class AppDatabase {
       'name': 'سكن الشباب',
       'type': 'home',
       'icon_name': 'home',
-      'member_count': 3,
       'created_at': DateTime(now.year, now.month - 1, 15).toUtc().toIso8601String(),
+      'updated_at': seededAt,
+      'is_synced': 1,
     });
 
     await db.insert('groups', {
@@ -285,49 +442,39 @@ class AppDatabase {
       'name': 'رحلة أبها',
       'type': 'trip',
       'icon_name': 'hiking',
-      'member_count': 5,
       'created_at': DateTime(now.year, now.month, 5).toUtc().toIso8601String(),
+      'updated_at': seededAt,
+      'is_synced': 1,
     });
 
-    // Seed Members for 'grp_work' (matching exact UI debts from Screen 3)
-    await db.insert('group_members', {
-      'id': 'mem_1',
-      'group_id': 'grp_work',
-      'name': 'خالد العتيبي',
-      'avatar_url': null,
-      'balance': 120.0, // خالد مدين لك بمبلغ 120
-      'note': 'غداء العمل الأخير',
-      'last_activity': 'قبل يومين',
-    });
-
-    await db.insert('group_members', {
-      'id': 'mem_2',
-      'group_id': 'grp_work',
-      'name': 'سارة الشمري',
-      'avatar_url': null,
-      'balance': -50.0, // أنت مدين لها بمبلغ 50
-      'note': 'طلب القهوة الأسبوعي',
-      'last_activity': 'أمس',
-    });
-
-    await db.insert('group_members', {
-      'id': 'mem_3',
-      'group_id': 'grp_work',
-      'name': 'فهد الدوسري',
-      'avatar_url': null,
-      'balance': 200.0, // فهد مدين لك بمبلغ 200
-      'note': 'تذاكر ورشة التقنية',
-      'last_activity': '12 مايو',
-    });
-
-    await db.insert('group_members', {
-      'id': 'mem_4',
-      'group_id': 'grp_work',
-      'name': 'أحمد ناصر',
-      'avatar_url': null,
-      'balance': 0.0, // الحساب متوازن
-      'note': 'تمت التسوية',
-      'last_activity': 'الأسبوع الماضي',
-    });
+    // Seed Members for 'grp_work' (matching exact UI debts from Screen 3).
+    // Balances are computed, so each demo debt is seeded as an opening balance.
+    const workMembers = [
+      ('mem_1', 'خالد العتيبي', 120.0, 'غداء العمل الأخير', 'قبل يومين'), // خالد مدين لك بمبلغ 120
+      ('mem_2', 'سارة الشمري', -50.0, 'طلب القهوة الأسبوعي', 'أمس'), // أنت مدين لها بمبلغ 50
+      ('mem_3', 'فهد الدوسري', 200.0, 'تذاكر ورشة التقنية', '12 مايو'), // فهد مدين لك بمبلغ 200
+      ('mem_4', 'أحمد ناصر', 0.0, 'تمت التسوية', 'الأسبوع الماضي'), // الحساب متوازن
+    ];
+    for (final (id, name, balance, note, lastActivity) in workMembers) {
+      await db.insert('group_members', {
+        'id': id,
+        'group_id': 'grp_work',
+        'name': name,
+        'avatar_url': null,
+        'note': note,
+        'last_activity': lastActivity,
+        'updated_at': seededAt,
+        'is_synced': 1,
+      });
+      await _insertOpeningBalance(
+        db,
+        groupId: 'grp_work',
+        memberId: id,
+        memberName: name,
+        balance: balance,
+        at: seededAt,
+        synced: true,
+      );
+    }
   }
 }
