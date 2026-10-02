@@ -39,7 +39,12 @@ void main() {
 
       final row = model.toMap();
       expect(row['created_at'], endsWith('Z'));
-      expect(GroupModel.fromMap(row).createdAt, local);
+      expect(row.containsKey('member_count'), isFalse);
+
+      // member_count comes from the query that reads groups.
+      final restored = GroupModel.fromMap({...row, 'member_count': 3});
+      expect(restored.createdAt, local);
+      expect(restored.memberCount, 3);
     });
   });
 }

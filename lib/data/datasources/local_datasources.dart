@@ -83,6 +83,8 @@ class ProfileLocalDataSourceImpl implements IProfileLocalDataSource {
     await db.delete('group_members');
     await db.delete('groups');
     await db.delete('group_expenses');
+    await db.delete('expense_splits');
+    await db.delete('settlements');
   }
 }
 
@@ -240,7 +242,41 @@ abstract class IGroupLocalDataSource {
   Future<void> settleMemberBalance(String memberId, String groupId);
 }
 
+/// What member `m` owes you, rounded to 2 decimals (negative: you owe them):
+/// their shares of expenses you paid, minus your shares of expenses they
+/// paid, minus what was settled. Computed from the saved splits and
+/// settlements rather than stored, so changes from several devices add up.
+const memberBalanceSql = '''
+  ROUND(
+      COALESCE((SELECT SUM(s.amount) FROM expense_splits s
+                JOIN group_expenses e ON e.id = s.expense_id
+                WHERE s.member_id = m.id AND s.group_id = m.group_id AND s.is_payer = 0
+                  AND e.payer_id = 'user_me'
+                  AND s.deleted_at IS NULL AND e.deleted_at IS NULL), 0)
+    - COALESCE((SELECT SUM(s.amount) FROM expense_splits s
+                JOIN group_expenses e ON e.id = s.expense_id
+                WHERE s.member_id = 'user_me' AND s.group_id = m.group_id AND s.is_payer = 0
+                  AND e.payer_id = m.id
+                  AND s.deleted_at IS NULL AND e.deleted_at IS NULL), 0)
+    - COALESCE((SELECT SUM(t.amount) FROM settlements t
+                WHERE t.member_id = m.id AND t.group_id = m.group_id
+                  AND t.deleted_at IS NULL), 0),
+    2)
+''';
+
+/// Groups with their live member count; deleted groups are skipped.
+const _groupsWithMemberCountSql = '''
+  SELECT g.*,
+         (SELECT COUNT(*) FROM group_members m
+          WHERE m.group_id = g.id AND m.deleted_at IS NULL) AS member_count
+  FROM groups g
+  WHERE g.deleted_at IS NULL
+''';
+
 /// Concrete SQLite implementation for Group Data Source (DIP)
+///
+/// Member counts and balances are computed on read; adding an expense saves
+/// each participant's split, and settling saves a settlement.
 class GroupLocalDataSourceImpl implements IGroupLocalDataSource {
   final AppDatabase appDatabase;
 
@@ -249,7 +285,8 @@ class GroupLocalDataSourceImpl implements IGroupLocalDataSource {
   @override
   Future<List<GroupModel>> getGroups() async {
     final db = await appDatabase.database;
-    final results = await db.query('groups', orderBy: 'created_at ASC');
+    final results =
+        await db.rawQuery('$_groupsWithMemberCountSql ORDER BY g.created_at ASC');
     return results.map((m) => GroupModel.fromMap(m)).toList();
   }
 
@@ -257,7 +294,7 @@ class GroupLocalDataSourceImpl implements IGroupLocalDataSource {
   Future<GroupModel?> getGroupById(String groupId) async {
     final db = await appDatabase.database;
     final results =
-        await db.query('groups', where: 'id = ?', whereArgs: [groupId]);
+        await db.rawQuery('$_groupsWithMemberCountSql AND g.id = ?', [groupId]);
     if (results.isNotEmpty) {
       return GroupModel.fromMap(results.first);
     }
@@ -267,69 +304,89 @@ class GroupLocalDataSourceImpl implements IGroupLocalDataSource {
   @override
   Future<List<GroupMemberModel>> getGroupMembers(String groupId) async {
     final db = await appDatabase.database;
-    final results = await db
-        .query('group_members', where: 'group_id = ?', whereArgs: [groupId]);
+    final results = await db.rawQuery('''
+      SELECT m.*, $memberBalanceSql AS balance
+      FROM group_members m
+      WHERE m.group_id = ? AND m.deleted_at IS NULL
+    ''', [groupId]);
     return results.map((m) => GroupMemberModel.fromMap(m)).toList();
   }
 
   @override
   Future<void> addGroup(GroupModel group) async {
     final db = await appDatabase.database;
-    await db.insert('groups', group.toMap(),
+    await db.insert('groups', _editedLocally(group.toMap()),
         conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   @override
   Future<void> addGroupExpense(GroupExpense expense) async {
     final db = await appDatabase.database;
-    await db.insert('group_expenses', {
-      'id': expense.id,
-      'group_id': expense.groupId,
-      'title': expense.title,
-      'total_amount': expense.totalAmount,
-      'payer_id': expense.payerId,
-      'payer_name': expense.payerName,
-      'category': expense.category,
-      'split_method': expense.splitMethod.name,
-      'date_time': expense.dateTime.toUtc().toIso8601String(),
-    });
+    await db.transaction((txn) async {
+      await txn.insert('group_expenses', _editedLocally({
+        'id': expense.id,
+        'group_id': expense.groupId,
+        'title': expense.title,
+        'total_amount': expense.totalAmount,
+        'payer_id': expense.payerId,
+        'payer_name': expense.payerName,
+        'category': expense.category,
+        'split_method': expense.splitMethod.name,
+        'date_time': expense.dateTime.toUtc().toIso8601String(),
+      }));
 
-    // Update balances for participants: each other member owes the payer their split
-    for (final split in expense.splits) {
-      if (!split.isPayer) {
-        final memberRes = await db.query('group_members',
-            where: 'id = ?', whereArgs: [split.memberId]);
-        if (memberRes.isNotEmpty) {
-          final currentBal = (memberRes.first['balance'] as num).toDouble();
-          final updatedBal =
-              currentBal + split.amount; // Member now owes user more
-          await db.update(
+      // Each participant's share, the payer's included; balances add these up.
+      for (final split in expense.splits) {
+        await txn.insert('expense_splits', _editedLocally({
+          'id': '${expense.id}:${split.memberId}',
+          'expense_id': expense.id,
+          'group_id': expense.groupId,
+          'member_id': split.memberId,
+          'amount': split.amount,
+          'percentage': split.percentage,
+          'is_payer': split.isPayer ? 1 : 0,
+        }));
+
+        if (!split.isPayer) {
+          await txn.update(
             'group_members',
-            {
-              'balance': updatedBal,
-              'note': expense.title,
-              'last_activity': 'اليوم',
-            },
-            where: 'id = ?',
-            whereArgs: [split.memberId],
+            _editedLocally({'note': expense.title, 'last_activity': 'اليوم'}),
+            where: 'id = ? AND group_id = ? AND deleted_at IS NULL',
+            whereArgs: [split.memberId, expense.groupId],
           );
         }
       }
-    }
+    });
   }
 
   @override
   Future<void> settleMemberBalance(String memberId, String groupId) async {
     final db = await appDatabase.database;
-    await db.update(
-      'group_members',
-      {
-        'balance': 0.0,
-        'note': 'تمت التسوية بنجاح',
-        'last_activity': 'اليوم',
-      },
-      where: 'id = ? AND group_id = ?',
-      whereArgs: [memberId, groupId],
-    );
+    await db.transaction((txn) async {
+      final result = await txn.rawQuery('''
+        SELECT $memberBalanceSql AS balance
+        FROM group_members m
+        WHERE m.id = ? AND m.group_id = ?
+      ''', [memberId, groupId]);
+      if (result.isEmpty) return;
+      final balance = (result.first['balance'] as num).toDouble();
+
+      // Settling records a payment for the whole balance, which brings it to 0.
+      if (balance != 0) {
+        await txn.insert('settlements', _editedLocally({
+          'id': 'stl_${DateTime.now().microsecondsSinceEpoch}',
+          'group_id': groupId,
+          'member_id': memberId,
+          'amount': balance,
+          'date_time': _nowUtc(),
+        }));
+      }
+      await txn.update(
+        'group_members',
+        _editedLocally({'note': 'تمت التسوية بنجاح', 'last_activity': 'اليوم'}),
+        where: 'id = ? AND group_id = ? AND deleted_at IS NULL',
+        whereArgs: [memberId, groupId],
+      );
+    });
   }
 }

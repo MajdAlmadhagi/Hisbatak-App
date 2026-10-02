@@ -110,18 +110,19 @@ class GroupModel extends GroupEntity {
       name: map['name'] as String,
       type: map['type'] as String,
       iconName: map['icon_name'] as String,
+      // Computed by the query that reads groups, not stored.
       memberCount: map['member_count'] as int,
       createdAt: DateTime.parse(map['created_at'] as String).toLocal(),
     );
   }
 
+  /// The stored columns; memberCount is computed from group_members.
   Map<String, dynamic> toMap() {
     return {
       'id': id,
       'name': name,
       'type': type,
       'icon_name': iconName,
-      'member_count': memberCount,
       'created_at': createdAt.toUtc().toIso8601String(),
     };
   }
@@ -145,19 +146,20 @@ class GroupMemberModel extends GroupMemberEntity {
       groupId: map['group_id'] as String,
       name: map['name'] as String,
       avatarUrl: map['avatar_url'] as String?,
+      // Computed from expense_splits and settlements by the query that reads members.
       balance: (map['balance'] as num).toDouble(),
       note: map['note'] as String?,
       lastActivity: map['last_activity'] as String?,
     );
   }
 
+  /// The stored columns; balance is computed.
   Map<String, dynamic> toMap() {
     return {
       'id': id,
       'group_id': groupId,
       'name': name,
       'avatar_url': avatarUrl,
-      'balance': balance,
       'note': note,
       'last_activity': lastActivity,
     };
