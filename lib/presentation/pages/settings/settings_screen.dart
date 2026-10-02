@@ -19,7 +19,9 @@ class SettingsScreen extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: context.appCardBackground,
-        title: const Text(AppStrings.wipeData, style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.expense)),
+        title: const Text(AppStrings.wipeData,
+            style: TextStyle(
+                fontWeight: FontWeight.bold, color: AppColors.expense)),
         content: Text(
           'هل أنت متأكد من رغبتك في حذف جميع السجلات والمجموعات من ذاكرة الجهاز؟ لا يمكن التراجع عن هذا الإجراء.',
           style: TextStyle(color: context.appTextSecondary),
@@ -27,7 +29,8 @@ class SettingsScreen extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: Text('إلغاء', style: TextStyle(color: context.appTextPrimary)),
+            child:
+                Text('إلغاء', style: TextStyle(color: context.appTextPrimary)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.expense),
@@ -35,10 +38,13 @@ class SettingsScreen extends StatelessWidget {
               context.read<ProfileBloc>().add(ResetAppDataEvent());
               Navigator.of(ctx).pop();
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('تم مسح البيانات المحلية وإعادة ضبط المصنع.')),
+                const SnackBar(
+                    content:
+                        Text('تم مسح البيانات المحلية وإعادة ضبط المصنع.')),
               );
             },
-            child: const Text('تأكيد المسح', style: TextStyle(color: Colors.white)),
+            child: const Text('تأكيد المسح',
+                style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -73,7 +79,8 @@ class SettingsScreen extends StatelessWidget {
                     children: [
                       OfflineStatusPill(isCompact: true),
                       SizedBox(width: 8),
-                      Icon(Icons.lock_outline_rounded, size: 18, color: AppColors.emerald),
+                      Icon(Icons.lock_outline_rounded,
+                          size: 18, color: AppColors.emerald),
                     ],
                   ),
                 ],
@@ -83,7 +90,8 @@ class SettingsScreen extends StatelessWidget {
               // Profile Card
               BlocBuilder<ProfileBloc, ProfileState>(
                 builder: (context, state) {
-                  final profile = (state is ProfileLoaded) ? state.profile : null;
+                  final profile =
+                      (state is ProfileLoaded) ? state.profile : null;
                   final name = profile?.fullName ?? AppStrings.defaultUserName;
                   final email = profile?.email ?? AppStrings.defaultUserEmail;
 
@@ -99,40 +107,55 @@ class SettingsScreen extends StatelessWidget {
                       children: [
                         CircleAvatar(
                           radius: 30,
-                          backgroundColor: isDark ? AppColors.cardDark : const Color(0xFFE2E8F0),
+                          backgroundColor: isDark
+                              ? AppColors.cardDark
+                              : const Color(0xFFE2E8F0),
                           child: Text(
                             name.isNotEmpty ? name[0] : 'م',
-                            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: context.appTextPrimary),
+                            style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: context.appTextPrimary),
                           ),
                         ),
                         const SizedBox(height: 10),
                         Text(
                           name,
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: context.appTextPrimary),
+                          style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: context.appTextPrimary),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           email,
-                          style: TextStyle(fontSize: 11, color: context.appTextSecondary),
+                          style: TextStyle(
+                              fontSize: 11, color: context.appTextSecondary),
                         ),
                         const SizedBox(height: 12),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: isDark ? AppColors.emerald.withValues(alpha: 0.2) : AppColors.mintSoft,
+                            color: isDark
+                                ? AppColors.emerald.withValues(alpha: 0.2)
+                                : AppColors.mintSoft,
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.verified_user_rounded, size: 14, color: AppColors.emerald),
+                              const Icon(Icons.verified_user_rounded,
+                                  size: 14, color: AppColors.emerald),
                               const SizedBox(width: 6),
                               Text(
                                 'المحفظة غير متصلة بالإنترنت (آمنة تماماً)',
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
-                                  color: isDark ? AppColors.mintContainer : AppColors.emerald,
+                                  color: isDark
+                                      ? AppColors.mintContainer
+                                      : AppColors.emerald,
                                 ),
                               ),
                             ],
@@ -148,7 +171,10 @@ class SettingsScreen extends StatelessWidget {
               // General Settings Section
               Text(
                 AppStrings.generalSettings,
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: context.appTextPrimary),
+                style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: context.appTextPrimary),
               ),
               const SizedBox(height: 10),
 
@@ -163,7 +189,8 @@ class SettingsScreen extends StatelessWidget {
                     trailing: Switch(
                       value: isDarkActive,
                       activeTrackColor: AppColors.emerald,
-                      onChanged: (val) => context.read<ThemeCubit>().setDarkMode(val),
+                      onChanged: (val) =>
+                          context.read<ThemeCubit>().setDarkMode(val),
                     ),
                   );
                 },
@@ -175,14 +202,18 @@ class SettingsScreen extends StatelessWidget {
                 title: AppStrings.appLanguage,
                 subtitle: AppStrings.appLanguageSub,
                 trailing: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: context.appSurfaceVariant,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     AppStrings.languageArabic,
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: context.appTextPrimary),
+                    style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: context.appTextPrimary),
                   ),
                 ),
               ),
@@ -198,17 +229,26 @@ class SettingsScreen extends StatelessWidget {
                     title: AppStrings.mainCurrency,
                     subtitle: AppStrings.mainCurrencySub,
                     trailing: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: isDark ? AppColors.emerald.withValues(alpha: 0.2) : AppColors.mintSoft,
+                        color: isDark
+                            ? AppColors.emerald.withValues(alpha: 0.2)
+                            : AppColors.mintSoft,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        currencyCode == 'YER' ? AppStrings.currencyYER : (currencyCode == 'USD' ? AppStrings.currencyUSD : AppStrings.currencySAR),
+                        currencyCode == 'YER'
+                            ? AppStrings.currencyYER
+                            : (currencyCode == 'USD'
+                                ? AppStrings.currencyUSD
+                                : AppStrings.currencySAR),
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
-                          color: isDark ? AppColors.mintContainer : AppColors.emerald,
+                          color: isDark
+                              ? AppColors.mintContainer
+                              : AppColors.emerald,
                         ),
                       ),
                     ),
@@ -232,7 +272,10 @@ class SettingsScreen extends StatelessWidget {
               // Data & Privacy Management Section
               Text(
                 AppStrings.dataPrivacyManagement,
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: context.appTextPrimary),
+                style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: context.appTextPrimary),
               ),
               const SizedBox(height: 10),
 
@@ -241,10 +284,12 @@ class SettingsScreen extends StatelessWidget {
                 icon: Icons.picture_as_pdf_outlined,
                 title: AppStrings.exportAllPdf,
                 subtitle: AppStrings.exportAllPdfSub,
-                trailing: Icon(Icons.download_rounded, color: context.appTextSecondary, size: 20),
+                trailing: Icon(Icons.download_rounded,
+                    color: context.appTextSecondary, size: 20),
                 onTap: () {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('تم تصدير كشف الحساب والعمليات بنجاح!')),
+                    const SnackBar(
+                        content: Text('تم تصدير كشف الحساب والعمليات بنجاح!')),
                   );
                 },
               ),
@@ -254,10 +299,12 @@ class SettingsScreen extends StatelessWidget {
                 icon: Icons.phonelink_setup_rounded,
                 title: AppStrings.createBackup,
                 subtitle: AppStrings.lastBackupToday,
-                trailing: const Icon(Icons.backup_outlined, color: AppColors.emerald, size: 20),
+                trailing: const Icon(Icons.backup_outlined,
+                    color: AppColors.emerald, size: 20),
                 onTap: () {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('تم إنشاء نسخة احتياطية محلية مشفرة.')),
+                    const SnackBar(
+                        content: Text('تم إنشاء نسخة احتياطية محلية مشفرة.')),
                   );
                 },
               ),
@@ -267,7 +314,8 @@ class SettingsScreen extends StatelessWidget {
                 icon: Icons.settings_backup_restore_rounded,
                 title: AppStrings.restoreBackup,
                 subtitle: AppStrings.restoreBackupSub,
-                trailing: Icon(Icons.file_upload_outlined, color: context.appTextSecondary, size: 20),
+                trailing: Icon(Icons.file_upload_outlined,
+                    color: context.appTextSecondary, size: 20),
                 onTap: () {},
               ),
 
@@ -286,14 +334,20 @@ class SettingsScreen extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: isDark ? AppColors.cardDark : AppColors.mintSoft.withValues(alpha: 0.5),
+                  color: isDark
+                      ? AppColors.cardDark
+                      : AppColors.mintSoft.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: isDark ? AppColors.borderDark : AppColors.mintContainer.withValues(alpha: 0.4)),
+                  border: Border.all(
+                      color: isDark
+                          ? AppColors.borderDark
+                          : AppColors.mintContainer.withValues(alpha: 0.4)),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.security_rounded, color: AppColors.emerald, size: 22),
+                    const Icon(Icons.security_rounded,
+                        color: AppColors.emerald, size: 22),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -304,7 +358,9 @@ class SettingsScreen extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
-                              color: isDark ? AppColors.mintContainer : AppColors.emerald,
+                              color: isDark
+                                  ? AppColors.mintContainer
+                                  : AppColors.emerald,
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -312,7 +368,9 @@ class SettingsScreen extends StatelessWidget {
                             AppStrings.totalPrivacyNote,
                             style: TextStyle(
                               fontSize: 10,
-                              color: isDark ? const Color(0xFF6FFBBE) : const Color(0xFF005236),
+                              color: isDark
+                                  ? const Color(0xFF6FFBBE)
+                                  : const Color(0xFF005236),
                               height: 1.4,
                             ),
                           ),
@@ -330,12 +388,14 @@ class SettingsScreen extends StatelessWidget {
                   children: [
                     Text(
                       'حِسبَتك ${AppStrings.appVersion} (Offline-First Build)',
-                      style: TextStyle(fontSize: 11, color: context.appTextMuted),
+                      style:
+                          TextStyle(fontSize: 11, color: context.appTextMuted),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       'جميع الحقوق محفوظة للمستخدم المحلي © 2026',
-                      style: TextStyle(fontSize: 10, color: context.appTextMuted),
+                      style:
+                          TextStyle(fontSize: 10, color: context.appTextMuted),
                     ),
                   ],
                 ),

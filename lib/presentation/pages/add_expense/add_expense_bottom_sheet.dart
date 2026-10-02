@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:hisbatak_app/core/utils/validators.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../../core/theme/app_theme.dart';
@@ -26,7 +27,7 @@ class AddExpenseBottomSheet extends StatefulWidget {
 class _AddExpenseBottomSheetState extends State<AddExpenseBottomSheet> {
   bool _isSharedBill = true;
   String _amountStr = '240.00';
-  final TextEditingController _titleController = TextEditingController(text: 'عشاء جماعي - مطعم الرومانسية');
+  final TextEditingController _titleController = TextEditingController();
   SplitMethod _selectedSplitMethod = SplitMethod.equal;
   String _selectedCategory = 'مطاعم وكافيهات';
 
@@ -82,7 +83,8 @@ class _AddExpenseBottomSheetState extends State<AddExpenseBottomSheet> {
       // Save to group expenses
       final groupsState = context.read<GroupsBloc>().state;
       String groupId = widget.initialGroupId ?? 'grp_work';
-      if (groupsState is GroupsLoaded && groupsState.selectedGroupId.isNotEmpty) {
+      if (groupsState is GroupsLoaded &&
+          groupsState.selectedGroupId.isNotEmpty) {
         groupId = groupsState.selectedGroupId;
       }
 
@@ -147,6 +149,8 @@ class _AddExpenseBottomSheetState extends State<AddExpenseBottomSheet> {
     );
   }
 
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
   @override
   Widget build(BuildContext context) {
     final amount = _currentAmount;
@@ -159,343 +163,412 @@ class _AddExpenseBottomSheetState extends State<AddExpenseBottomSheet> {
         color: context.appCardBackground,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      child: Column(
-        children: [
-          // Drag Handle
-          const SizedBox(height: 12),
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.borderDark : AppColors.borderVariant,
-              borderRadius: BorderRadius.circular(2),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          children: [
+            // Drag Handle
+            const SizedBox(height: 12),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.borderDark : AppColors.borderVariant,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
+            const SizedBox(height: 8),
 
-          // Header: Title & Close
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.wifi_off_rounded, size: 16, color: AppColors.emerald),
-                    const SizedBox(width: 6),
-                    Text(
-                      AppStrings.addNewTransaction,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: context.appTextPrimary,
-                      ),
-                    ),
-                  ],
-                ),
-                IconButton(
-                  icon: Icon(Icons.close, color: context.appTextSecondary),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              ],
-            ),
-          ),
-          Divider(color: context.appBorder),
-
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            // Header: Title & Close
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Toggle: Shared Bill vs Personal Expense
-                  Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: context.appSurfaceVariant,
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Row(
-                      children: [
-                        // Shared Bill
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () => setState(() => _isSharedBill = true),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 10),
-                              decoration: BoxDecoration(
-                                color: _isSharedBill ? context.appCardBackground : Colors.transparent,
-                                borderRadius: BorderRadius.circular(10),
-                                boxShadow: _isSharedBill
-                                    ? [
-                                        BoxShadow(
-                                          color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.06),
-                                          blurRadius: 6,
-                                        ),
-                                      ]
-                                    : null,
+                  Row(
+                    children: [
+                      const Icon(Icons.wifi_off_rounded,
+                          size: 16, color: AppColors.emerald),
+                      const SizedBox(width: 6),
+                      Text(
+                        AppStrings.addNewTransaction,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: context.appTextPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.close, color: context.appTextSecondary),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
+              ),
+            ),
+            Divider(color: context.appBorder),
+
+            Expanded(
+              child: SingleChildScrollView(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Toggle: Shared Bill vs Personal Expense
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: context.appSurfaceVariant,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Row(
+                        children: [
+                          // Shared Bill
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () => setState(() => _isSharedBill = true),
+                              child: Container(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: _isSharedBill
+                                      ? context.appCardBackground
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(10),
+                                  boxShadow: _isSharedBill
+                                      ? [
+                                          BoxShadow(
+                                            color: Colors.black.withValues(
+                                                alpha: isDark ? 0.2 : 0.06),
+                                            blurRadius: 6,
+                                          ),
+                                        ]
+                                      : null,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 3,
+                                      backgroundColor: _isSharedBill
+                                          ? AppColors.emerald
+                                          : Colors.transparent,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      AppStrings.sharedBill,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        color: _isSharedBill
+                                            ? context.appTextPrimary
+                                            : context.appTextSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  CircleAvatar(
-                                    radius: 3,
-                                    backgroundColor: _isSharedBill ? AppColors.emerald : Colors.transparent,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    AppStrings.sharedBill,
+                            ),
+                          ),
+                          // Personal Expense
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () =>
+                                  setState(() => _isSharedBill = false),
+                              child: Container(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: !_isSharedBill
+                                      ? context.appCardBackground
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(10),
+                                  boxShadow: !_isSharedBill
+                                      ? [
+                                          BoxShadow(
+                                            color: Colors.black.withValues(
+                                                alpha: isDark ? 0.2 : 0.06),
+                                            blurRadius: 6,
+                                          ),
+                                        ]
+                                      : null,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    AppStrings.personalExpense,
                                     style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,
-                                      color: _isSharedBill ? context.appTextPrimary : context.appTextSecondary,
+                                      color: !_isSharedBill
+                                          ? context.appTextPrimary
+                                          : context.appTextSecondary,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Amount Display
+                    Center(
+                      child: Column(
+                        children: [
+                          Text(
+                            AppStrings.requiredSplitAmount,
+                            style: TextStyle(
+                                fontSize: 12, color: context.appTextSecondary),
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.baseline,
+                            textBaseline: TextBaseline.alphabetic,
+                            children: [
+                              Text(
+                                'SAR ',
+                                style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: context.appTextSecondary),
+                              ),
+                              Text(
+                                _amountStr,
+                                style: TextStyle(
+                                  fontSize: 36,
+                                  fontWeight: FontWeight.w900,
+                                  color: context.appTextPrimary,
+                                  letterSpacing: -0.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Title Pill with edit icon
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: context.appSurfaceVariant,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: TextFormField(
+                        controller: _titleController,
+                        textAlign: TextAlign.center,
+                        autovalidateMode: AutovalidateMode.onUserInteraction,
+                        validator: (value) {
+                          return Validators.requiredField(value);
+                        },
+                        style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: context.appTextPrimary),
+                        decoration: InputDecoration(
+                          hintText: _isSharedBill
+                              ? " مثال : غداء جماعي"
+                              : "مثال : مصاريف مواصلات,...",
+                          border: InputBorder.none,
+                          isDense: true,
+                          suffixIcon: Icon(Icons.edit_outlined,
+                              size: 16, color: context.appTextSecondary),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    if (_isSharedBill) ...[
+                      // Splitting Method Row
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            AppStrings.splitMethod,
+                            style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: context.appTextSecondary),
+                          ),
+                          Text(
+                            '3 أفراد بالتساوي',
+                            style: TextStyle(
+                                fontSize: 11,
+                                color: isDark
+                                    ? AppColors.mintContainer
+                                    : AppColors.emerald,
+                                fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+
+                      // Split Method Chips
+                      Row(
+                        children: [
+                          _buildSplitMethodChip(context, SplitMethod.equal,
+                              AppStrings.splitEqually),
+                          const SizedBox(width: 8),
+                          _buildSplitMethodChip(context, SplitMethod.percentage,
+                              AppStrings.splitByPercentage),
+                          const SizedBox(width: 8),
+                          _buildSplitMethodChip(context, SplitMethod.custom,
+                              AppStrings.splitCustom),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Participants Cards
+                      Row(
+                        children: [
+                          _buildParticipantCard(
+                            context: context,
+                            name: 'أنت (الدافع)',
+                            amount: sharePerPerson,
+                            avatarLetter: 'أ',
+                            avatarColor: AppColors.mintFixed,
+                          ),
+                          const SizedBox(width: 8),
+                          _buildParticipantCard(
+                            context: context,
+                            name: 'خالد العتيبي',
+                            amount: sharePerPerson,
+                            avatarLetter: 'خ',
+                            avatarColor: const Color(0xFFDBEAFE),
+                          ),
+                          const SizedBox(width: 8),
+                          _buildParticipantCard(
+                            context: context,
+                            name: 'سارة المقرن',
+                            amount: sharePerPerson,
+                            avatarLetter: 'س',
+                            avatarColor: const Color(0xFFA7F3D0),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+
+                    // Category Selector
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: _categories.map((cat) {
+                          final isSelected = cat['name'] == _selectedCategory;
+                          final activeBg =
+                              isDark ? AppColors.emerald : AppColors.primary;
+                          final inactiveBg = context.appSurfaceVariant;
+
+                          return GestureDetector(
+                            onTap: () => setState(() =>
+                                _selectedCategory = cat['name'] as String),
+                            child: Container(
+                              margin: const EdgeInsets.only(left: 8),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: isSelected ? activeBg : inactiveBg,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Row(
+                                children: [
+                                  Text(cat['icon'] as String,
+                                      style: const TextStyle(fontSize: 14)),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    cat['name'] as String,
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      color: isSelected
+                                          ? Colors.white
+                                          : context.appTextPrimary,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                          ),
-                        ),
-                        // Personal Expense
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () => setState(() => _isSharedBill = false),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 10),
-                              decoration: BoxDecoration(
-                                color: !_isSharedBill ? context.appCardBackground : Colors.transparent,
-                                borderRadius: BorderRadius.circular(10),
-                                boxShadow: !_isSharedBill
-                                    ? [
-                                        BoxShadow(
-                                          color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.06),
-                                          blurRadius: 6,
-                                        ),
-                                      ]
-                                    : null,
-                              ),
-                              child: Center(
-                                child: Text(
-                                  AppStrings.personalExpense,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: !_isSharedBill ? context.appTextPrimary : context.appTextSecondary,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+                          );
+                        }).toList(),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 16),
 
-                  // Amount Display
-                  Center(
-                    child: Column(
-                      children: [
-                        Text(
-                          AppStrings.requiredSplitAmount,
-                          style: TextStyle(fontSize: 12, color: context.appTextSecondary),
+                    // Numeric Keypad
+                    CustomNumericKeypad(
+                      onKeyPressed: _onKeypadPress,
+                      onDelete: _onKeypadDelete,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Save Button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          if (_formKey.currentState!.validate()) {
+                            _onSaveExpense();
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              isDark ? AppColors.emerald : AppColors.primary,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14)),
                         ),
-                        const SizedBox(height: 4),
-                        Row(
+                        child: const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.baseline,
-                          textBaseline: TextBaseline.alphabetic,
                           children: [
+                            Icon(Icons.save_outlined,
+                                size: 20, color: Colors.white),
+                            SizedBox(width: 8),
                             Text(
-                              'SAR ',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: context.appTextSecondary),
-                            ),
-                            Text(
-                              _amountStr,
+                              AppStrings.saveOffline,
                               style: TextStyle(
-                                fontSize: 36,
-                                fontWeight: FontWeight.w900,
-                                color: context.appTextPrimary,
-                                letterSpacing: -0.5,
-                              ),
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white),
                             ),
                           ],
                         ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-
-                  // Title Pill with edit icon
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: context.appSurfaceVariant,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: TextField(
-                      controller: _titleController,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: context.appTextPrimary),
-                      decoration: InputDecoration(
-                        border: InputBorder.none,
-                        isDense: true,
-                        suffixIcon: Icon(Icons.edit_outlined, size: 16, color: context.appTextSecondary),
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  if (_isSharedBill) ...[
-                    // Splitting Method Row
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          AppStrings.splitMethod,
-                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: context.appTextSecondary),
-                        ),
-                        Text(
-                          '3 أفراد بالتساوي',
-                          style: TextStyle(fontSize: 11, color: isDark ? AppColors.mintContainer : AppColors.emerald, fontWeight: FontWeight.bold),
-                        ),
-                      ],
                     ),
                     const SizedBox(height: 8),
 
-                    // Split Method Chips
-                    Row(
-                      children: [
-                        _buildSplitMethodChip(context, SplitMethod.equal, AppStrings.splitEqually),
-                        const SizedBox(width: 8),
-                        _buildSplitMethodChip(context, SplitMethod.percentage, AppStrings.splitByPercentage),
-                        const SizedBox(width: 8),
-                        _buildSplitMethodChip(context, SplitMethod.custom, AppStrings.splitCustom),
-                      ],
+                    // Footer
+                    Center(
+                      child: Text(
+                        AppStrings.readyForSyncFooter,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            fontSize: 10,
+                            color: isDark
+                                ? AppColors.mintContainer
+                                : AppColors.emerald,
+                            fontWeight: FontWeight.bold),
+                      ),
                     ),
-                    const SizedBox(height: 14),
-
-                    // Participants Cards
-                    Row(
-                      children: [
-                        _buildParticipantCard(
-                          context: context,
-                          name: 'أنت (الدافع)',
-                          amount: sharePerPerson,
-                          avatarLetter: 'أ',
-                          avatarColor: AppColors.mintFixed,
-                        ),
-                        const SizedBox(width: 8),
-                        _buildParticipantCard(
-                          context: context,
-                          name: 'خالد العتيبي',
-                          amount: sharePerPerson,
-                          avatarLetter: 'خ',
-                          avatarColor: const Color(0xFFDBEAFE),
-                        ),
-                        const SizedBox(width: 8),
-                        _buildParticipantCard(
-                          context: context,
-                          name: 'سارة المقرن',
-                          amount: sharePerPerson,
-                          avatarLetter: 'س',
-                          avatarColor: const Color(0xFFA7F3D0),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 10),
                   ],
-
-                  // Category Selector
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: _categories.map((cat) {
-                        final isSelected = cat['name'] == _selectedCategory;
-                        final activeBg = isDark ? AppColors.emerald : AppColors.primary;
-                        final inactiveBg = context.appSurfaceVariant;
-
-                        return GestureDetector(
-                          onTap: () => setState(() => _selectedCategory = cat['name'] as String),
-                          child: Container(
-                            margin: const EdgeInsets.only(left: 8),
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: isSelected ? activeBg : inactiveBg,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Row(
-                              children: [
-                                Text(cat['icon'] as String, style: const TextStyle(fontSize: 14)),
-                                const SizedBox(width: 6),
-                                Text(
-                                  cat['name'] as String,
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
-                                    color: isSelected ? Colors.white : context.appTextPrimary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Numeric Keypad
-                  CustomNumericKeypad(
-                    onKeyPressed: _onKeypadPress,
-                    onDelete: _onKeypadDelete,
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Save Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: ElevatedButton(
-                      onPressed: _onSaveExpense,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: isDark ? AppColors.emerald : AppColors.primary,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                      ),
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.save_outlined, size: 20, color: Colors.white),
-                          SizedBox(width: 8),
-                          Text(
-                            AppStrings.saveOffline,
-                            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Footer
-                  Center(
-                    child: Text(
-                      AppStrings.readyForSyncFooter,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 10, color: isDark ? AppColors.mintContainer : AppColors.emerald, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildSplitMethodChip(BuildContext context, SplitMethod method, String label) {
+  Widget _buildSplitMethodChip(
+      BuildContext context, SplitMethod method, String label) {
     final isSelected = _selectedSplitMethod == method;
     final isDark = context.isDarkMode;
     final activeBg = isDark ? AppColors.emerald : AppColors.primary;
@@ -549,19 +622,28 @@ class _AddExpenseBottomSheetState extends State<AddExpenseBottomSheet> {
               backgroundColor: avatarColor,
               child: Text(
                 avatarLetter,
-                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary),
               ),
             ),
             const SizedBox(height: 6),
             Text(
               name,
-              style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: context.appTextPrimary),
+              style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: context.appTextPrimary),
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 2),
             Text(
               '${amount.toStringAsFixed(2)} ر.س',
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: isDark ? AppColors.mintContainer : AppColors.emerald),
+              style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? AppColors.mintContainer : AppColors.emerald),
             ),
           ],
         ),

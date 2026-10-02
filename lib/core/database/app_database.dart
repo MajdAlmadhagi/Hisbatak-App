@@ -300,7 +300,11 @@ class AppDatabase {
     final memberOwesYou = balance > 0;
     final expenseId = 'opening_${groupId}_$memberId';
     final debtorId = memberOwesYou ? memberId : 'user_me';
-    final syncColumns = {'updated_at': at, 'deleted_at': null, 'is_synced': synced ? 1 : 0};
+    final syncColumns = {
+      'updated_at': at,
+      'deleted_at': null,
+      'is_synced': synced ? 1 : 0
+    };
 
     await db.insert('group_expenses', {
       'id': expenseId,
@@ -328,7 +332,8 @@ class AppDatabase {
 
   /// v1 stored dates as DateTime.toIso8601String() of local times: no time
   /// zone in the string. Read on the same device, they still mean local time.
-  Future<void> _convertDatesToUtc(Database db, String table, String column) async {
+  Future<void> _convertDatesToUtc(
+      Database db, String table, String column) async {
     final rows = await db.query(table, columns: ['id', column]);
     for (final row in rows) {
       final value = row[column] as String?;
@@ -368,8 +373,9 @@ class AppDatabase {
       'category': 'بقالة وتموين',
       'category_icon': 'shopping_cart',
       'payment_method': 'مدى • من البطاقة',
-      'date_time':
-          DateTime(now.year, now.month, now.day, 16, 15).toUtc().toIso8601String(),
+      'date_time': DateTime(now.year, now.month, now.day, 16, 15)
+          .toUtc()
+          .toIso8601String(),
       'type': 'expense',
       'updated_at': seededAt,
       'is_synced': 1,
@@ -382,8 +388,9 @@ class AppDatabase {
       'category': 'إيداع نقدي',
       'category_icon': 'account_balance',
       'payment_method': 'مكتمل',
-      'date_time':
-          DateTime(now.year, now.month, now.day - 1, 9, 30).toUtc().toIso8601String(),
+      'date_time': DateTime(now.year, now.month, now.day - 1, 9, 30)
+          .toUtc()
+          .toIso8601String(),
       'type': 'income',
       'updated_at': seededAt,
       'is_synced': 1,
@@ -396,8 +403,9 @@ class AppDatabase {
       'category': 'مطاعم ومقاهي',
       'category_icon': 'local_cafe',
       'payment_method': 'Apple Pay',
-      'date_time':
-          DateTime(now.year, now.month, now.day - 1, 8, 10).toUtc().toIso8601String(),
+      'date_time': DateTime(now.year, now.month, now.day - 1, 8, 10)
+          .toUtc()
+          .toIso8601String(),
       'type': 'expense',
       'updated_at': seededAt,
       'is_synced': 1,
@@ -432,7 +440,8 @@ class AppDatabase {
       'name': 'سكن الشباب',
       'type': 'home',
       'icon_name': 'home',
-      'created_at': DateTime(now.year, now.month - 1, 15).toUtc().toIso8601String(),
+      'created_at':
+          DateTime(now.year, now.month - 1, 15).toUtc().toIso8601String(),
       'updated_at': seededAt,
       'is_synced': 1,
     });
@@ -450,10 +459,34 @@ class AppDatabase {
     // Seed Members for 'grp_work' (matching exact UI debts from Screen 3).
     // Balances are computed, so each demo debt is seeded as an opening balance.
     const workMembers = [
-      ('mem_1', 'خالد العتيبي', 120.0, 'غداء العمل الأخير', 'قبل يومين'), // خالد مدين لك بمبلغ 120
-      ('mem_2', 'سارة الشمري', -50.0, 'طلب القهوة الأسبوعي', 'أمس'), // أنت مدين لها بمبلغ 50
-      ('mem_3', 'فهد الدوسري', 200.0, 'تذاكر ورشة التقنية', '12 مايو'), // فهد مدين لك بمبلغ 200
-      ('mem_4', 'أحمد ناصر', 0.0, 'تمت التسوية', 'الأسبوع الماضي'), // الحساب متوازن
+      (
+        'mem_1',
+        'خالد العتيبي',
+        120.0,
+        'غداء العمل الأخير',
+        'قبل يومين'
+      ), // خالد مدين لك بمبلغ 120
+      (
+        'mem_2',
+        'سارة الشمري',
+        -50.0,
+        'طلب القهوة الأسبوعي',
+        'أمس'
+      ), // أنت مدين لها بمبلغ 50
+      (
+        'mem_3',
+        'فهد الدوسري',
+        200.0,
+        'تذاكر ورشة التقنية',
+        '12 مايو'
+      ), // فهد مدين لك بمبلغ 200
+      (
+        'mem_4',
+        'أحمد ناصر',
+        0.0,
+        'تمت التسوية',
+        'الأسبوع الماضي'
+      ), // الحساب متوازن
     ];
     for (final (id, name, balance, note, lastActivity) in workMembers) {
       await db.insert('group_members', {

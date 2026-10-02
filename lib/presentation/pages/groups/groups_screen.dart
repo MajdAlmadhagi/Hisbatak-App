@@ -76,8 +76,10 @@ class GroupsScreen extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     radius: 20,
-                    backgroundColor: isDark ? AppColors.cardDark : const Color(0xFFE2E8F0),
-                    child: Icon(Icons.person, color: context.appTextSecondary, size: 22),
+                    backgroundColor:
+                        isDark ? AppColors.cardDark : const Color(0xFFE2E8F0),
+                    child: Icon(Icons.person,
+                        color: context.appTextSecondary, size: 22),
                   ),
                   const SizedBox(width: 10),
                   Column(
@@ -93,7 +95,8 @@ class GroupsScreen extends StatelessWidget {
                       ),
                       Text(
                         state.selectedGroup?.name ?? AppStrings.groupWork,
-                        style: TextStyle(fontSize: 11, color: context.appTextSecondary),
+                        style: TextStyle(
+                            fontSize: 11, color: context.appTextSecondary),
                       ),
                     ],
                   ),
@@ -110,7 +113,8 @@ class GroupsScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: context.appBorder),
                     ),
-                    child: Icon(Icons.picture_as_pdf_outlined, size: 18, color: context.appTextPrimary),
+                    child: Icon(Icons.picture_as_pdf_outlined,
+                        size: 18, color: context.appTextPrimary),
                   ),
                 ],
               ),
@@ -140,7 +144,10 @@ class GroupsScreen extends StatelessWidget {
             children: [
               Text(
                 AppStrings.activeGroups,
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: context.appTextPrimary),
+                style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: context.appTextPrimary),
               ),
               Text(
                 '${state.groups.length} مجموعات نشطة',
@@ -157,7 +164,8 @@ class GroupsScreen extends StatelessWidget {
               children: [
                 ...state.groups.map((grp) {
                   final isSelected = grp.id == selectedGroupId;
-                  final activeBg = isDark ? AppColors.emerald : AppColors.primary;
+                  final activeBg =
+                      isDark ? AppColors.emerald : AppColors.primary;
                   final inactiveBg = context.appCardBackground;
                   final activeText = Colors.white;
                   final inactiveText = context.appTextPrimary;
@@ -168,7 +176,8 @@ class GroupsScreen extends StatelessWidget {
                     },
                     child: Container(
                       margin: const EdgeInsets.only(left: 8),
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 10),
                       decoration: BoxDecoration(
                         color: isSelected ? activeBg : inactiveBg,
                         borderRadius: BorderRadius.circular(20),
@@ -199,14 +208,18 @@ class GroupsScreen extends StatelessWidget {
                 }),
                 // New Group Button
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   decoration: BoxDecoration(
                     color: context.appSurfaceVariant,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     AppStrings.newGroup,
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: context.appTextSecondary),
+                    style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: context.appTextSecondary),
                   ),
                 ),
               ],
@@ -220,11 +233,17 @@ class GroupsScreen extends StatelessWidget {
             children: [
               Text(
                 AppStrings.groupMembersAndSettlements,
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: context.appTextPrimary),
+                style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: context.appTextPrimary),
               ),
               Text(
                 '${state.activeMembers.length} أعضاء في ${state.selectedGroup?.name ?? ''}',
-                style: TextStyle(fontSize: 11, color: isDark ? AppColors.mintContainer : AppColors.emerald, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                    fontSize: 11,
+                    color: isDark ? AppColors.mintContainer : AppColors.emerald,
+                    fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -236,7 +255,8 @@ class GroupsScreen extends StatelessWidget {
               member: member,
               onSettle: () {
                 context.read<GroupsBloc>().add(
-                      SettleMemberEvent(memberId: member.id, groupId: member.groupId),
+                      SettleMemberEvent(
+                          memberId: member.id, groupId: member.groupId),
                     );
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -254,19 +274,25 @@ class GroupsScreen extends StatelessWidget {
             width: double.infinity,
             height: 52,
             child: ElevatedButton(
-              onPressed: () => _showAddExpenseModal(context, state.selectedGroupId),
+              onPressed: () =>
+                  _showAddExpenseModal(context, state.selectedGroupId),
               style: ElevatedButton.styleFrom(
                 backgroundColor: isDark ? AppColors.emerald : AppColors.primary,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
               ),
               child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.receipt_long_rounded, size: 20, color: Colors.white),
+                  Icon(Icons.receipt_long_rounded,
+                      size: 20, color: Colors.white),
                   SizedBox(width: 8),
                   Text(
                     AppStrings.addSharedBill,
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                    style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white),
                   ),
                 ],
               ),

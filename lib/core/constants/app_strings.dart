@@ -52,6 +52,7 @@ class AppStrings {
   static const String walletAiDescription =
       'وفرت 15% مقارنة بنفس الفترة الشهر الماضي! استمر على هذا المعدل لتصل لهدف ادخار 3,000 ر.س.';
   static const String recentTransactions = 'آخر الحركات المالية';
+  static const String noTransactions = 'لا توجد حركات مالية';
   static const String viewAll = 'عرض الكل';
   static const String budgetUnderControl = 'ميزانيتك تحت السيطرة دائماً!';
   static const String budgetControlSub =

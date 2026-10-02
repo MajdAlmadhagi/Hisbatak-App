@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import '../../core/database/app_database.dart';
 import '../models/app_models.dart';
@@ -163,9 +164,11 @@ class BudgetLocalDataSourceImpl implements IBudgetLocalDataSource {
       final oldType = oldTx['type'] as String;
 
       // Adjust profile available budget
-      final profileRes = await db.query('user_profile', where: 'id = ?', whereArgs: ['user_me']);
+      final profileRes = await db
+          .query('user_profile', where: 'id = ?', whereArgs: ['user_me']);
       if (profileRes.isNotEmpty) {
-        double current = (profileRes.first['current_available'] as num).toDouble();
+        double current =
+            (profileRes.first['current_available'] as num).toDouble();
         // Revert old transaction effect
         if (oldType == 'expense') {
           current += oldAmount;
@@ -178,7 +181,8 @@ class BudgetLocalDataSourceImpl implements IBudgetLocalDataSource {
         } else {
           current += transaction.amount;
         }
-        await db.update('user_profile', {'current_available': current}, where: 'id = ?', whereArgs: ['user_me']);
+        await db.update('user_profile', {'current_available': current},
+            where: 'id = ?', whereArgs: ['user_me']);
       }
     }
 
@@ -197,15 +201,18 @@ class BudgetLocalDataSourceImpl implements IBudgetLocalDataSource {
       final oldType = oldTx['type'] as String;
 
       // Revert transaction effect from available balance
-      final profileRes = await db.query('user_profile', where: 'id = ?', whereArgs: ['user_me']);
+      final profileRes = await db
+          .query('user_profile', where: 'id = ?', whereArgs: ['user_me']);
       if (profileRes.isNotEmpty) {
-        double current = (profileRes.first['current_available'] as num).toDouble();
+        double current =
+            (profileRes.first['current_available'] as num).toDouble();
         if (oldType == 'expense') {
           current += oldAmount;
         } else {
           current -= oldAmount;
         }
-        await db.update('user_profile', {'current_available': current}, where: 'id = ?', whereArgs: ['user_me']);
+        await db.update('user_profile', {'current_available': current},
+            where: 'id = ?', whereArgs: ['user_me']);
       }
 
       // Mark instead of delete, so the deletion reaches the server and other devices.

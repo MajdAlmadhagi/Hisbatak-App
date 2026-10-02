@@ -39,13 +39,13 @@ class _SplashScreenState extends State<SplashScreen>
 
   /// Shortest time the splash stays up, so it reads as a deliberate screen
   /// rather than a flash: about when the loader finishes drawing the "ح".
-  static const _minimumDisplay = Duration(milliseconds: 1600);
+  static const _minimumDisplay = Duration(milliseconds: 5000);
 
   /// Upper bound if the local database never answers.
   static const _maximumWait = Duration(seconds: 10);
 
   /// Leaves as soon as the profile has loaded (and the minimum time has
-  /// passed): to home if it is configured, otherwise to profile setup.
+  /// passed): to home if it is already configured, otherwise to profile setup.
   Future<void> _navigateWhenReady() async {
     final profileState = _waitForProfile(context.read<ProfileBloc>());
     await Future<void>.delayed(_minimumDisplay);
@@ -72,7 +72,6 @@ class _SplashScreenState extends State<SplashScreen>
     _controller.dispose();
     super.dispose();
   }
-  
 
   @override
   Widget build(BuildContext context) {

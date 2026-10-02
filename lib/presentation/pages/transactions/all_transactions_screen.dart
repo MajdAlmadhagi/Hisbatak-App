@@ -248,7 +248,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 8),
                           child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               Text(
                                 AppStrings.totalExpenses,
@@ -345,30 +345,49 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                 const SizedBox(height: 12),
 
                 // Type Filter Tabs (الكل / مصروفات / دخل)
-                Row(
-                  children: [
-                    _buildFilterTab(
-                      label: AppStrings.all,
-                      isSelected: _selectedTypeFilter == 'all',
-                      onTap: () => setState(() => _selectedTypeFilter = 'all'),
-                    ),
-                    const SizedBox(width: 8),
-                    _buildFilterTab(
-                      label: AppStrings.expenses,
-                      isSelected: _selectedTypeFilter == 'expense',
-                      onTap: () =>
-                          setState(() => _selectedTypeFilter = 'expense'),
-                    ),
-                    const SizedBox(width: 8),
-                    _buildFilterTab(
-                      label: AppStrings.income,
-                      isSelected: _selectedTypeFilter == 'income',
-                      onTap: () =>
-                          setState(() => _selectedTypeFilter = 'income'),
-                    ),
-                  ],
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(12),
+                    //border: Border.all(color: context.appBorder),
+                  ),
+                  child: Row(
+                    children: [
+                      _buildFilterTab(
+                        label: AppStrings.all,
+                        isSelected: _selectedTypeFilter == 'all',
+                        onTap: () =>
+                            setState(() => _selectedTypeFilter = 'all'),
+                      ),
+                      const SizedBox(width: 8),
+                      _buildFilterTab(
+                        label: AppStrings.expenses,
+                        isSelected: _selectedTypeFilter == 'expense',
+                        onTap: () =>
+                            setState(() => _selectedTypeFilter = 'expense'),
+                      ),
+                      const SizedBox(width: 8),
+                      _buildFilterTab(
+                        label: AppStrings.income,
+                        isSelected: _selectedTypeFilter == 'income',
+                        onTap: () =>
+                            setState(() => _selectedTypeFilter = 'income'),
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 10),
+
+                Text('فلترة حسب التصنيف',
+                    style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: context.appTextPrimary)),
+
+                const SizedBox(
+                  height: 3,
+                ),
 
                 // Horizontal Category Filter Chips
                 SingleChildScrollView(
@@ -382,7 +401,12 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                         padding: const EdgeInsets.only(left: 8),
                         child: FilterChip(
                           selected: isSelected,
-                          showCheckmark: false,
+                          showCheckmark: true,
+                          checkmarkColor: isSelected
+                              ? (isDark
+                                  ? AppColors.mintContainer
+                                  : AppColors.emerald)
+                              : context.appTextSecondary,
                           label: Text(
                             cat,
                             style: TextStyle(
@@ -402,6 +426,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                               ? AppColors.emerald.withValues(alpha: 0.25)
                               : AppColors.mintFixed,
                           side: BorderSide(
+                            width: 1.6,
                             color: isSelected
                                 ? (isDark
                                     ? AppColors.emerald
@@ -479,35 +504,32 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
   }) {
     final isDark = context.isDarkMode;
     return Expanded(
-      child: Material(
-        color: isSelected
-            ? (isDark
-                ? AppColors.emerald.withValues(alpha: 0.25)
-                : AppColors.mintFixed)
-            : context.appCardBackground,
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(10),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(10),
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: isSelected ? AppColors.emerald : context.appBorder,
-                width: isSelected ? 1.5 : 1.0,
-              ),
-            ),
-            child: Center(
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                  color: isSelected
-                      ? (isDark ? AppColors.mintContainer : AppColors.emerald)
-                      : context.appTextSecondary,
-                ),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? (isDark
+                    ? AppColors.emerald.withValues(alpha: 0.25)
+                    : AppColors.mintFixed)
+                : null,
+            borderRadius: BorderRadius.circular(10),
+            // border: Border.all(
+            //   color: isSelected ? AppColors.emerald : context.appBorder,
+            //   width: isSelected ? 1.5 : 1.0,
+            // ),
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                color: isSelected
+                    ? (isDark ? AppColors.mintContainer : AppColors.emerald)
+                    : context.appTextPrimary,
               ),
             ),
           ),

@@ -31,7 +31,7 @@ class CustomTextFormFieldCard extends StatelessWidget {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.bold,
-              color: context.appTextSecondary,
+              color: context.appTextPrimary,
             ),
           ),
           const SizedBox(height: 8),

@@ -28,8 +28,7 @@ class HomeBudgetScreen extends StatelessWidget {
         child: BlocBuilder<BudgetBloc, BudgetState>(
           builder: (context, state) {
             if (state is BudgetLoading) {
-              return const Center(
-                  child: HisbatakLoader());
+              return const Center(child: HisbatakLoader());
             } else if (state is BudgetLoaded) {
               return _buildContent(context, state);
             } else if (state is BudgetError) {
@@ -101,7 +100,16 @@ class HomeBudgetScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '${AppHelpers.greetingMessage()} \n $userName',
+                            '${AppHelpers.greetingMessage()}',
+                            style: TextStyle(
+                              fontSize: 17.5,
+                              fontWeight: FontWeight.bold,
+                              color: context.appTextPrimary,
+                            ),
+                          ),
+                          // const SizedBox(height: 1),
+                          Text(
+                            userName,
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
@@ -119,13 +127,13 @@ class HomeBudgetScreen extends StatelessWidget {
                     ),
                     const OfflineStatusPill(isCompact: true),
                     const SizedBox(width: 8),
-                    IconButton(
-                      icon: Icon(Icons.search,
-                          size: 20, color: context.appTextPrimary),
-                      onPressed: () {},
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
+                    // IconButton(
+                    //   icon: Icon(Icons.search,
+                    //       size: 20, color: context.appTextPrimary),
+                    //   onPressed: () {},
+                    //   padding: EdgeInsets.zero,
+                    //   constraints: const BoxConstraints(),
+                    // ),
                     const SizedBox(width: 8),
                     IconButton(
                       icon: Icon(Icons.notifications_none_rounded,
@@ -241,11 +249,23 @@ class HomeBudgetScreen extends StatelessWidget {
             const SizedBox(height: 8),
 
             // Transactions List
-            ...state.recentTransactions
-                .map((tx) => TransactionListTile(
-                      item: tx,
-                      onTap: () => TransactionDetailsDialog.show(context, tx),
-                    )),
+            if (state.recentTransactions.isEmpty) ...[
+              const Center(
+                child: Text(
+                  AppStrings.noTransactions,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    // color: AppColors.emerald
+                  ),
+                ),
+              ),
+            ] else ...[
+              ...state.recentTransactions.map((tx) => TransactionListTile(
+                    item: tx,
+                    onTap: () => TransactionDetailsDialog.show(context, tx),
+                  )),
+            ],
             const SizedBox(height: 16),
 
             // Bottom Security Banner

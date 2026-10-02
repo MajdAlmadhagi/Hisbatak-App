@@ -83,7 +83,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                  color: isDark ? AppColors.emerald.withValues(alpha: 0.2) : AppColors.mintSoft,
+                  color: isDark
+                      ? AppColors.emerald.withValues(alpha: 0.2)
+                      : AppColors.mintSoft,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -203,7 +205,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                       style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
-                          color: context.appTextSecondary),
+                          color: context.appTextPrimary),
                     ),
                     const SizedBox(height: 8),
 
@@ -398,7 +400,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                           color: context.appTextPrimary, size: 24),
                     ),
                     const SizedBox(width: 12),
-                    const Expanded(
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -407,7 +409,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                             style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,
-                                color: AppColors.textPrimary),
+                                color: context.appTextPrimary),
                           ),
                           SizedBox(height: 2),
                           Text(

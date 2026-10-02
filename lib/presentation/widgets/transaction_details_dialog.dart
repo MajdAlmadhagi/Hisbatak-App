@@ -118,7 +118,7 @@ class TransactionDetailsDialog extends StatelessWidget {
   }
 
   void _openEditModal(BuildContext context) {
-    Navigator.pop(context); // close view sheet
+    Navigator.pop(context); // close previous view sheet
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
