@@ -43,6 +43,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       orElse: () => _currencies.first,
     );
 
+    // This screen has no budget field yet, so a new user starts from a
+    // default monthly budget with nothing spent.
+    const monthlyBudget = 20000.0;
+
     final profile = UserProfile(
       id: 'user_me',
       fullName: _nameController.text.trim().isNotEmpty
@@ -51,8 +55,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       email: AppStrings.defaultUserEmail,
       currencyCode: _selectedCurrency,
       currencySymbol: currencyInfo['symbol']!,
-      monthlyBudgetLimit: 20000.0,
-      currentAvailable: 14850.0,
+      monthlyBudgetLimit: monthlyBudget,
+      currentAvailable: monthlyBudget,
       biometricEnabled: _biometricEnabled,
       isDarkMode: false,
       isConfigured: true,
