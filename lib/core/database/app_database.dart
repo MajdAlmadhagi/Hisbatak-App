@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -36,9 +36,10 @@ class AppDatabase {
     //open the database and create tables if not exists for first time , and upgrade the database if the version is greater than the current version
     return await openDatabase(
       path,
-      version: 3,
+      version: 6,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
+      onOpen: _onOpen,
     );
   }
 
@@ -70,6 +71,8 @@ class AppDatabase {
       payment_method TEXT NOT NULL,
       date_time TEXT NOT NULL,
       type TEXT NOT NULL, -- 'expense' or 'income'
+      group_id TEXT,
+      expense_id TEXT,
       updated_at TEXT NOT NULL, -- last local edit; the later edit wins a sync conflict
       deleted_at TEXT, -- set instead of deleting the row, so the deletion can sync
       is_synced INTEGER NOT NULL DEFAULT 0 -- 0: changed since the last sync
@@ -174,6 +177,8 @@ class AppDatabase {
     await db.execute(_createExpenseSplitsTable);
     await db.execute(_createSettlementsTable);
 
+    debugPrint('=========Database tables created successfully============');
+
     // 6. Seed demo data matching the Stitch designs, in debug builds only:
     // real users start empty, and the demo rows must never sync to their accounts.
     if (kDebugMode) await _seedDatabase(db);
@@ -183,6 +188,27 @@ class AppDatabase {
   FutureOr<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) await _upgradeToV2(db);
     if (oldVersion < 3) await _upgradeToV3(db);
+    if (oldVersion < 4) await _upgradeToV4(db);
+    if (oldVersion < 5) await _upgradeToV5(db);
+    if (oldVersion < 6) await _upgradeToV6(db);
+
+    debugPrint("===========Database tables upgraded successfully============");
+  }
+
+  /// Always ensures required schema columns exist upon opening, even across hot restarts
+  FutureOr<void> _onOpen(Database db) async {
+    try {
+      await db.execute('ALTER TABLE transactions ADD COLUMN group_id TEXT');
+    } catch (_) {}
+    try {
+      await db.execute('ALTER TABLE transactions ADD COLUMN expense_id TEXT');
+    } catch (_) {}
+    try {
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_group_members_group_id ON group_members(group_id)');
+    } catch (_) {}
+    try {
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_group_members_name ON group_members(name)');
+    } catch (_) {}
   }
 
   /// v2: makes the database ready for sync.
@@ -284,6 +310,36 @@ class AppDatabase {
     await db.execute('DROP TABLE groups_v2');
   }
 
+  /// v4: Add group_id and expense_id foreign key references to transactions table.
+  Future<void> _upgradeToV4(Database db) async {
+    try {
+      await db.execute('ALTER TABLE transactions ADD COLUMN group_id TEXT');
+    } catch (_) {}
+    try {
+      await db.execute('ALTER TABLE transactions ADD COLUMN expense_id TEXT');
+    } catch (_) {}
+  }
+
+  /// v5: Ensure group_id and expense_id columns exist on transactions table.
+  Future<void> _upgradeToV5(Database db) async {
+    try {
+      await db.execute('ALTER TABLE transactions ADD COLUMN group_id TEXT');
+    } catch (_) {}
+    try {
+      await db.execute('ALTER TABLE transactions ADD COLUMN expense_id TEXT');
+    } catch (_) {}
+  }
+
+  /// v6: Add indexes on group_members for fast cross-group member aggregation and lookups.
+  Future<void> _upgradeToV6(Database db) async {
+    try {
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_group_members_group_id ON group_members(group_id)');
+    } catch (_) {}
+    try {
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_group_members_name ON group_members(name)');
+    } catch (_) {}
+  }
+
   /// Records a balance that existed before splits were saved (or a demo
   /// balance) as one past expense with a single split, so it adds up like any
   /// other expense: positive means the member owes you.
@@ -372,11 +428,13 @@ class AppDatabase {
       'amount': 340.0,
       'category': 'بقالة وتموين',
       'category_icon': 'shopping_cart',
-      'payment_method': 'مدى • من البطاقة',
+      'payment_method': 'فاتورة مشتركة',
       'date_time': DateTime(now.year, now.month, now.day, 16, 15)
           .toUtc()
           .toIso8601String(),
       'type': 'expense',
+      'group_id': 'grp_work',
+      'expense_id': 'exp_danube_1',
       'updated_at': seededAt,
       'is_synced': 1,
     });
@@ -509,5 +567,55 @@ class AppDatabase {
         synced: true,
       );
     }
+
+    // Seed shared expense and splits corresponding to tx_1
+    await db.insert('group_expenses', {
+      'id': 'exp_danube_1',
+      'group_id': 'grp_work',
+      'title': 'سوبرماركت الدانوب',
+      'total_amount': 340.0,
+      'payer_id': 'user_me',
+      'payer_name': 'أنت',
+      'category': 'بقالة وتموين',
+      'split_method': 'equal',
+      'date_time': DateTime(now.year, now.month, now.day, 16, 15)
+          .toUtc()
+          .toIso8601String(),
+      'updated_at': seededAt,
+      'is_synced': 1,
+    });
+    await db.insert('expense_splits', {
+      'id': 'exp_danube_1:user_me',
+      'expense_id': 'exp_danube_1',
+      'group_id': 'grp_work',
+      'member_id': 'user_me',
+      'amount': 113.34,
+      'percentage': 33.34,
+      'is_payer': 1,
+      'updated_at': seededAt,
+      'is_synced': 1,
+    });
+    await db.insert('expense_splits', {
+      'id': 'exp_danube_1:mem_1',
+      'expense_id': 'exp_danube_1',
+      'group_id': 'grp_work',
+      'member_id': 'mem_1',
+      'amount': 113.33,
+      'percentage': 33.33,
+      'is_payer': 0,
+      'updated_at': seededAt,
+      'is_synced': 1,
+    });
+    await db.insert('expense_splits', {
+      'id': 'exp_danube_1:mem_2',
+      'expense_id': 'exp_danube_1',
+      'group_id': 'grp_work',
+      'member_id': 'mem_2',
+      'amount': 113.33,
+      'percentage': 33.33,
+      'is_payer': 0,
+      'updated_at': seededAt,
+      'is_synced': 1,
+    });
   }
 }

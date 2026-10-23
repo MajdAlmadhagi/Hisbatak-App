@@ -60,10 +60,42 @@ class TransactionModel extends TransactionItem {
     required super.paymentMethod,
     required super.dateTime,
     required super.type,
+    super.groupId,
+    super.expenseId,
+    super.groupName,
+    super.memberNames = const [],
     required super.isSynced,
   });
 
+  factory TransactionModel.fromEntity(TransactionItem item) {
+    return TransactionModel(
+      id: item.id,
+      title: item.title,
+      amount: item.amount,
+      category: item.category,
+      categoryIcon: item.categoryIcon,
+      paymentMethod: item.paymentMethod,
+      dateTime: item.dateTime,
+      type: item.type,
+      groupId: item.groupId,
+      expenseId: item.expenseId,
+      groupName: item.groupName,
+      memberNames: item.memberNames,
+      isSynced: item.isSynced,
+    );
+  }
+
   factory TransactionModel.fromMap(Map<String, dynamic> map) {
+    List<String> members = [];
+    if (map['member_names'] != null &&
+        (map['member_names'] as String).trim().isNotEmpty) {
+      members = (map['member_names'] as String)
+          .split(',')
+          .map((s) => s.trim())
+          .where((s) => s.isNotEmpty)
+          .toList();
+    }
+
     return TransactionModel(
       id: map['id'] as String,
       title: map['title'] as String,
@@ -73,11 +105,18 @@ class TransactionModel extends TransactionItem {
       paymentMethod: map['payment_method'] as String,
       // Stored in UTC; shown in the device's time zone.
       dateTime: DateTime.parse(map['date_time'] as String).toLocal(),
-      type: (map['type'] == 'income') ? TransactionType.income : TransactionType.expense,
+      type: (map['type'] == 'income')
+          ? TransactionType.income
+          : TransactionType.expense,
+      groupId: map['group_id'] as String?,
+      expenseId: map['expense_id'] as String?,
+      groupName: map['group_name'] as String?,
+      memberNames: members,
       isSynced: (map['is_synced'] as int) == 1,
     );
   }
 
+  /// Normalized table columns; group_name and member_names are resolved live via JOINs.
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -88,6 +127,8 @@ class TransactionModel extends TransactionItem {
       'payment_method': paymentMethod,
       'date_time': dateTime.toUtc().toIso8601String(),
       'type': (type == TransactionType.income) ? 'income' : 'expense',
+      'group_id': groupId,
+      'expense_id': expenseId,
       'is_synced': isSynced ? 1 : 0,
     };
   }
@@ -165,3 +206,35 @@ class GroupMemberModel extends GroupMemberEntity {
     };
   }
 }
+
+/// [GroupMemberWithGroupModel] maps joined group members and groups from SQLite.
+class GroupMemberWithGroupModel extends GroupMemberWithGroupEntity {
+  const GroupMemberWithGroupModel({
+    required super.id,
+    required super.groupId,
+    required super.groupName,
+    required super.groupType,
+    required super.groupIcon,
+    required super.name,
+    super.avatarUrl,
+    required super.balance,
+    super.note,
+    super.lastActivity,
+  });
+
+  factory GroupMemberWithGroupModel.fromMap(Map<String, dynamic> map) {
+    return GroupMemberWithGroupModel(
+      id: map['id'] as String,
+      groupId: map['group_id'] as String,
+      groupName: (map['group_name'] as String?) ?? '',
+      groupType: (map['group_type'] as String?) ?? 'other',
+      groupIcon: (map['group_icon'] as String?) ?? 'profile_2user',
+      name: map['name'] as String,
+      avatarUrl: map['avatar_url'] as String?,
+      balance: (map['balance'] as num?)?.toDouble() ?? 0.0,
+      note: map['note'] as String?,
+      lastActivity: map['last_activity'] as String?,
+    );
+  }
+}
+

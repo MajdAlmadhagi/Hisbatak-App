@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:hisbatak_app/presentation/widgets/custom_bottom_sheet.dart';
+import 'package:iconsax_flutter/iconsax_flutter.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/app_helpers.dart';
 import '../../bloc/profile/profile_bloc.dart';
 import '../../bloc/theme/theme_cubit.dart';
-import '../../widgets/offline_status_pill.dart';
+import '../../widgets/profile_qr_code_widget.dart';
 import '../../widgets/settings_item_tile.dart';
 
 /// [SettingsScreen] renders user preferences, security, and offline data management matching Stitch Screen 5.
@@ -75,19 +79,19 @@ class SettingsScreen extends StatelessWidget {
                       color: context.appTextPrimary,
                     ),
                   ),
-                  const Row(
-                    children: [
-                      OfflineStatusPill(isCompact: true),
-                      SizedBox(width: 8),
-                      Icon(Icons.lock_outline_rounded,
-                          size: 18, color: AppColors.emerald),
-                    ],
-                  ),
+                  // const Row(
+                  //   children: [
+                  //     // OfflineStatusPill(isCompact: true),
+                  //     // SizedBox(width: 8),
+                  //     Icon(Iconsax.lock,
+                  //         size: 18, color: AppColors.emerald),
+                  //   ],
+                  // ),
                 ],
               ),
               const SizedBox(height: 16),
 
-              // Profile Card
+              // Profile Card (Modern Fintech Layout)
               BlocBuilder<ProfileBloc, ProfileState>(
                 builder: (context, state) {
                   final profile =
@@ -97,65 +101,154 @@ class SettingsScreen extends StatelessWidget {
 
                   return Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(18),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: context.appCardBackground,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(color: context.appBorder),
+                      boxShadow: [
+                        BoxShadow(
+                          color: isDark
+                              ? Colors.black.withValues(alpha: 0.25)
+                              : AppColors.emerald.withValues(alpha: 0.04),
+                          blurRadius: 16,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
                     child: Column(
                       children: [
-                        CircleAvatar(
-                          radius: 30,
-                          backgroundColor: isDark
-                              ? AppColors.cardDark
-                              : const Color(0xFFE2E8F0),
-                          child: Text(
-                            name.isNotEmpty ? name[0] : 'م',
-                            style: TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                color: context.appTextPrimary),
-                          ),
+                        // Top Row: Avatar + User Info + QR Code Action Button
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            // 1. Glowing Profile Avatar
+                            Container(
+                              padding: const EdgeInsets.all(2.5),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: const LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    AppColors.mintContainer,
+                                    AppColors.emeraldLight,
+                                    Color(0xFF10B981),
+                                    AppColors.emerald,
+                                  ],
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: (isDark
+                                            ? AppColors.mintContainer
+                                            : AppColors.emeraldLight)
+                                        .withValues(
+                                            alpha: isDark ? 0.45 : 0.25),
+                                    blurRadius: 14,
+                                    spreadRadius: 1,
+                                  ),
+                                ],
+                              ),
+                              child: Container(
+                                padding: const EdgeInsets.all(2),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: context.appCardBackground,
+                                ),
+                                child: CircleAvatar(
+                                  radius: 26,
+                                  backgroundColor: isDark
+                                      ? AppColors.cardDark
+                                      : const Color(0xFFE2E8F0),
+                                  child: Text(
+                                    name.isNotEmpty ? name[0] : 'م',
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: isDark
+                                          ? AppColors.mintContainer
+                                          : AppColors.emerald,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+
+                            // 2. User Details (Name & Email)
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    name,
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: context.appTextPrimary,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    email,
+                                    style: TextStyle(
+                                      fontSize: 11.5,
+                                      color: context.appTextSecondary,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+
+                            // 3. Modern QR Code Action Button
+                            ProfileQrCodeButton(
+                              profile: profile,
+                              width: 90,
+                              height: 75,
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 10),
-                        Text(
-                          name,
-                          style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: context.appTextPrimary),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          email,
-                          style: TextStyle(
-                              fontSize: 11, color: context.appTextSecondary),
-                        ),
-                        const SizedBox(height: 12),
+
+                        const SizedBox(height: 14),
+
+                        // Bottom Security & Offline Status Banner
                         Container(
+                          width: double.infinity,
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 6),
+                              horizontal: 12, vertical: 8),
                           decoration: BoxDecoration(
                             color: isDark
-                                ? AppColors.emerald.withValues(alpha: 0.2)
-                                : AppColors.mintSoft,
-                            borderRadius: BorderRadius.circular(20),
+                                ? AppColors.cardDark
+                                : AppColors.mintSoft.withValues(alpha: 0.6),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isDark
+                                  ? AppColors.borderDark
+                                  : AppColors.mintContainer
+                                      .withValues(alpha: 0.5),
+                            ),
                           ),
                           child: Row(
-                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.verified_user_rounded,
-                                  size: 14, color: AppColors.emerald),
-                              const SizedBox(width: 6),
-                              Text(
-                                'المحفظة غير متصلة بالإنترنت (آمنة تماماً)',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: isDark
-                                      ? AppColors.mintContainer
-                                      : AppColors.emerald,
+                              const Icon(Iconsax.shield_tick,
+                                  size: 15, color: AppColors.emerald),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'حسبتك غير متصل بالإنترنت (آمن ومحمية محلياً 100%)',
+                                  style: TextStyle(
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w600,
+                                    color: isDark
+                                        ? AppColors.mintContainer
+                                        : AppColors.emerald,
+                                  ),
                                 ),
                               ),
                             ],
@@ -169,13 +262,8 @@ class SettingsScreen extends StatelessWidget {
               const SizedBox(height: 20),
 
               // General Settings Section
-              Text(
-                AppStrings.generalSettings,
-                style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: context.appTextPrimary),
-              ),
+              _buildSectionTitle(AppStrings.generalSettings, context),
+
               const SizedBox(height: 10),
 
               // Dark Mode Toggle
@@ -183,7 +271,7 @@ class SettingsScreen extends StatelessWidget {
                 builder: (context, themeMode) {
                   final isDarkActive = themeMode == ThemeMode.dark;
                   return SettingsItemTile(
-                    icon: Icons.dark_mode_outlined,
+                    icon: Iconsax.moon,
                     title: AppStrings.darkMode,
                     subtitle: AppStrings.darkModeSub,
                     trailing: Switch(
@@ -198,7 +286,7 @@ class SettingsScreen extends StatelessWidget {
 
               // App Language Tile
               SettingsItemTile(
-                icon: Icons.translate_rounded,
+                icon: Iconsax.global,
                 title: AppStrings.appLanguage,
                 subtitle: AppStrings.appLanguageSub,
                 trailing: Container(
@@ -225,7 +313,7 @@ class SettingsScreen extends StatelessWidget {
                       ? profileState.profile.currencyCode
                       : 'SAR';
                   return SettingsItemTile(
-                    icon: Icons.payments_outlined,
+                    icon: Iconsax.money_3,
                     title: AppStrings.mainCurrency,
                     subtitle: AppStrings.mainCurrencySub,
                     trailing: Container(
@@ -256,9 +344,37 @@ class SettingsScreen extends StatelessWidget {
                 },
               ),
 
+              // SettingsItemTile(
+              //   onTap: (){
+              //               const CustomBottomSheet(title: AppStrings.mainCurrency,
+
+              //               child: ,);
+
+              //   },
+              //   icon: Iconsax.money_3,
+              //   title: AppStrings.mainCurrency,
+              //   subtitle: AppStrings.mainCurrencySub,
+              //   trailing: Container(
+              //     padding:
+              //         const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              //     decoration: BoxDecoration(
+              //       color: context.appSurfaceVariant,
+              //       borderRadius: BorderRadius.circular(8),
+              //     ),
+              //     child: Text(
+              //       AppStrings.languageArabic,
+              //       style: TextStyle(
+              //           fontSize: 11,
+              //           fontWeight: FontWeight.bold,
+              //           color: context.appTextPrimary),
+              //     ),
+
+              //   ),
+              // ),
+
               // Budget Alerts Toggle
               SettingsItemTile(
-                icon: Icons.notifications_active_outlined,
+                icon: Iconsax.notification,
                 title: AppStrings.budgetAlerts,
                 subtitle: AppStrings.budgetAlertsSub,
                 trailing: Switch(
@@ -270,21 +386,28 @@ class SettingsScreen extends StatelessWidget {
               const SizedBox(height: 20),
 
               // Data & Privacy Management Section
-              Text(
-                AppStrings.dataPrivacyManagement,
-                style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: context.appTextPrimary),
-              ),
+              _buildSectionTitle(AppStrings.dataPrivacyManagement, context),
+
               const SizedBox(height: 10),
+
+              // Biometrics Toggle
+              SettingsItemTile(
+                icon: Iconsax.finger_scan,
+                title: AppStrings.fingerprint,
+                subtitle: AppStrings.fingerprintSub,
+                trailing: Switch(
+                  value: true,
+                  activeTrackColor: AppColors.emerald,
+                  onChanged: (val) {},
+                ),
+              ),
 
               // Export PDF
               SettingsItemTile(
-                icon: Icons.picture_as_pdf_outlined,
+                icon: Iconsax.document_text,
                 title: AppStrings.exportAllPdf,
                 subtitle: AppStrings.exportAllPdfSub,
-                trailing: Icon(Icons.download_rounded,
+                trailing: Icon(Iconsax.document_download,
                     color: context.appTextSecondary, size: 20),
                 onTap: () {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -296,10 +419,10 @@ class SettingsScreen extends StatelessWidget {
 
               // Backup Local Data
               SettingsItemTile(
-                icon: Icons.phonelink_setup_rounded,
+                icon: Iconsax.mobile,
                 title: AppStrings.createBackup,
                 subtitle: AppStrings.lastBackupToday,
-                trailing: const Icon(Icons.backup_outlined,
+                trailing: const Icon(Iconsax.cloud_connection,
                     color: AppColors.emerald, size: 20),
                 onTap: () {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -311,23 +434,62 @@ class SettingsScreen extends StatelessWidget {
 
               // Restore Backup
               SettingsItemTile(
-                icon: Icons.settings_backup_restore_rounded,
+                icon: Iconsax.refresh_2,
                 title: AppStrings.restoreBackup,
                 subtitle: AppStrings.restoreBackupSub,
-                trailing: Icon(Icons.file_upload_outlined,
+                trailing: Icon(Iconsax.document_upload,
                     color: context.appTextSecondary, size: 20),
                 onTap: () {},
               ),
 
               // Wipe Data (Destructive)
               SettingsItemTile(
-                icon: Icons.delete_outline_rounded,
+                icon: Iconsax.trash,
                 title: AppStrings.wipeData,
                 subtitle: AppStrings.wipeDataSub,
                 isDestructive: true,
                 onTap: () => _showWipeConfirmation(context),
               ),
               const SizedBox(height: 16),
+
+              _buildSectionTitle(AppStrings.others, context),
+              const SizedBox(height: 10),
+
+              // SettingsItemTile(
+              //   icon: Iconsax.discover,
+              //   title: AppStrings.onboardingAppTour,
+              //   subtitle: AppStrings.onboardingAppTourSub,
+              //   trailing: Icon(
+              //     Iconsax.arrow_left_2,
+              //     size: 14,
+              //     color: context.appTextMuted,
+              //   ),
+              //   onTap: () => context.push('/onboarding'),
+              // ),
+
+              SettingsItemTile(
+                icon: Iconsax.info_circle,
+                title: AppStrings.aboutApp,
+                // subtitle: 'الإصدار، الميزات، وفلسفة الخصوصية',
+                trailing: Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 14,
+                  color: context.appTextMuted,
+                ),
+                onTap: () => context.push('/about'),
+              ),
+
+              SettingsItemTile(
+                icon: Iconsax.logout,
+                title: AppStrings.logout,
+                isDestructive: true,
+                // trailing: Icon(
+                //   Iconsax.arrow_left_2,
+                //   size: 14,
+                //   color: isDark ? const Color(0xFFF87171) : AppColors.expense,
+                // ),
+                onTap: () => AppHelpers.showLogoutDialog(context),
+              ),
 
               // Total Privacy Note Banner
               Container(
@@ -346,7 +508,7 @@ class SettingsScreen extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.security_rounded,
+                    const Icon(Iconsax.security_safe,
                         color: AppColors.emerald, size: 22),
                     const SizedBox(width: 12),
                     Expanded(
@@ -367,6 +529,7 @@ class SettingsScreen extends StatelessWidget {
                           Text(
                             AppStrings.totalPrivacyNote,
                             style: TextStyle(
+                              fontWeight: FontWeight.w600,
                               fontSize: 10,
                               color: isDark
                                   ? const Color(0xFF6FFBBE)
@@ -388,14 +551,18 @@ class SettingsScreen extends StatelessWidget {
                   children: [
                     Text(
                       'حِسبَتك ${AppStrings.appVersion} (Offline-First Build)',
-                      style:
-                          TextStyle(fontSize: 11, color: context.appTextMuted),
+                      style: TextStyle(
+                          fontSize: 11,
+                          color: context.appTextMuted,
+                          fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'جميع الحقوق محفوظة للمستخدم المحلي © 2026',
-                      style:
-                          TextStyle(fontSize: 10, color: context.appTextMuted),
+                      'جميع الحقوق محفوظة لMsmDev © 2026',
+                      style: TextStyle(
+                          fontSize: 10,
+                          color: context.appTextMuted,
+                          fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
@@ -405,6 +572,30 @@ class SettingsScreen extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title, BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          height: 16.6,
+          width: 4,
+          // color: AppColors.emerald,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(15),
+            color: AppColors.emerald,
+          ),
+        ),
+        const SizedBox(width: 5),
+        Text(
+          title,
+          style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: context.appTextPrimary),
+        ),
+      ],
     );
   }
 }

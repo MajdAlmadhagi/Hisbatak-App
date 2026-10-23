@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:iconsax_flutter/iconsax_flutter.dart';
 import '../../core/constants/app_colors.dart';
 
 /// [OfflineStatusPill] displays the offline active banner and security badge (matching Screen 1, 2, 3, 5).
@@ -82,8 +83,7 @@ class OfflineTopBanner extends StatelessWidget {
               color: Color(0xFF6CF8BB),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.cloud_done_rounded,
-                color: AppColors.emerald, size: 20),
+            child: const Icon(Icons.cloud, color: AppColors.emerald, size: 20),
           ),
           const SizedBox(width: 12),
           const Expanded(

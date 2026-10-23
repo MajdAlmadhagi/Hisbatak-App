@@ -41,6 +41,26 @@ void main() {
       expect(splits[1].amount, 400.0);
     });
 
+    test('CustomAmountSplitStrategy should assign exact custom amounts', () {
+      final strategy = CustomAmountSplitStrategy();
+      final splits = strategy.calculateSplits(
+        totalAmount: 250.0,
+        memberIds: ['m1', 'm2', 'm3'],
+        memberNames: {'m1': 'عضو 1', 'm2': 'عضو 2', 'm3': 'عضو 3'},
+        payerId: 'm1',
+        customValues: {'m1': 100.0, 'm2': 100.0, 'm3': 50.0},
+      );
+
+      expect(splits.length, 3);
+      expect(splits[0].amount, 100.0);
+      expect(splits[0].percentage, 40.0);
+      expect(splits[1].amount, 100.0);
+      expect(splits[1].percentage, 40.0);
+      expect(splits[2].amount, 50.0);
+      expect(splits[2].percentage, 20.0);
+    });
+
+
     test('Formatters should format currency correctly with Arabic symbols', () {
       expect(Formatters.formatCurrency(14850.0), '14,850 ر.س');
       expect(Formatters.formatSignedCurrency(2400.0), '+2,400 ر.س');

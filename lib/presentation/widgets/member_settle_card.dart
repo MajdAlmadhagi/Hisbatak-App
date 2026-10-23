@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:iconsax_flutter/iconsax_flutter.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_theme.dart';
@@ -30,7 +31,9 @@ class MemberSettleCard extends StatelessWidget {
     String badgeLabel;
 
     if (owesUser) {
-      badgeBg = isDark ? AppColors.emerald.withValues(alpha: 0.25) : AppColors.mintFixed;
+      badgeBg = isDark
+          ? AppColors.emerald.withValues(alpha: 0.25)
+          : AppColors.mintFixed;
       badgeText = isDark ? AppColors.mintContainer : const Color(0xFF005236);
       badgeLabel = 'لك';
     } else if (userOwes) {
@@ -61,7 +64,9 @@ class MemberSettleCard extends StatelessWidget {
                 backgroundColor: context.appSurfaceVariant,
                 child: Text(
                   member.name.isNotEmpty ? member.name[0] : '?',
-                  style: TextStyle(fontWeight: FontWeight.bold, color: context.appTextPrimary),
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: context.appTextPrimary),
                 ),
               ),
               Positioned(
@@ -71,9 +76,14 @@ class MemberSettleCard extends StatelessWidget {
                   width: 12,
                   height: 12,
                   decoration: BoxDecoration(
-                    color: owesUser ? AppColors.income : (userOwes ? AppColors.expense : AppColors.outline),
+                    color: owesUser
+                        ? AppColors.income
+                        : (userOwes ? AppColors.expense : AppColors.outline),
                     shape: BoxShape.circle,
-                    border: Border.all(color: isDark ? AppColors.cardDarkElevated : Colors.white, width: 2),
+                    border: Border.all(
+                        color:
+                            isDark ? AppColors.cardDarkElevated : Colors.white,
+                        width: 2),
                   ),
                 ),
               ),
@@ -98,7 +108,8 @@ class MemberSettleCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 1),
                       decoration: BoxDecoration(
                         color: badgeBg,
                         borderRadius: BorderRadius.circular(6),
@@ -121,7 +132,8 @@ class MemberSettleCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      color: isDark ? AppColors.mintContainer : AppColors.income,
+                      color:
+                          isDark ? AppColors.mintContainer : AppColors.income,
                     ),
                   )
                 else if (userOwes)
@@ -130,7 +142,8 @@ class MemberSettleCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      color: isDark ? const Color(0xFFF87171) : AppColors.expense,
+                      color:
+                          isDark ? const Color(0xFFF87171) : AppColors.expense,
                     ),
                   )
                 else
@@ -161,7 +174,8 @@ class MemberSettleCard extends StatelessWidget {
               onTap: onSettle,
               borderRadius: BorderRadius.circular(10),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: context.appSurfaceVariant,
                   borderRadius: BorderRadius.circular(10),
@@ -169,7 +183,8 @@ class MemberSettleCard extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.handshake_outlined, size: 14, color: context.appTextPrimary),
+                    Icon(Iconsax.money_change,
+                        size: 14, color: context.appTextPrimary),
                     const SizedBox(width: 4),
                     Text(
                       AppStrings.settleAccount,

@@ -54,6 +54,32 @@ class AddGroupExpenseUseCase {
   }
 }
 
+/// [AddGroupUseCase] creates a new group.
+///
+/// SOLID Principle: Single Responsibility Principle (SRP)
+class AddGroupUseCase {
+  final IGroupRepository repository;
+
+  AddGroupUseCase(this.repository);
+
+  Future<void> call(GroupEntity group) async {
+    return await repository.addGroup(group);
+  }
+}
+
+/// [AddGroupMemberUseCase] registers a new member within a group.
+///
+/// SOLID Principle: Single Responsibility Principle (SRP)
+class AddGroupMemberUseCase {
+  final IGroupRepository repository;
+
+  AddGroupMemberUseCase(this.repository);
+
+  Future<void> call(GroupMemberEntity member) async {
+    return await repository.addGroupMember(member);
+  }
+}
+
 /// [SettleBalanceUseCase] balances a member debt to zero upon settlement.
 ///
 /// SOLID Principle: Single Responsibility Principle (SRP)
@@ -66,3 +92,31 @@ class SettleBalanceUseCase {
     return await repository.settleMemberBalance(memberId: memberId, groupId: groupId);
   }
 }
+
+/// [GetConsolidatedMembersUseCase] retrieves all members grouped across all separated groups.
+///
+/// SOLID Principle: Single Responsibility Principle (SRP)
+class GetConsolidatedMembersUseCase {
+  final IGroupRepository repository;
+
+  GetConsolidatedMembersUseCase(this.repository);
+
+  Future<List<ConsolidatedMemberEntity>> call() async {
+    return await repository.getConsolidatedMembers();
+  }
+}
+
+/// [GetAllGroupMembersUseCase] retrieves all raw memberships joined with their group data.
+///
+/// SOLID Principle: Single Responsibility Principle (SRP)
+class GetAllGroupMembersUseCase {
+  final IGroupRepository repository;
+
+  GetAllGroupMembersUseCase(this.repository);
+
+  Future<List<GroupMemberWithGroupEntity>> call() async {
+    return await repository.getAllGroupMembers();
+  }
+}
+
+

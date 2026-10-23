@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:iconsax_flutter/iconsax_flutter.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 
@@ -27,12 +28,13 @@ class CustomBottomNavBar extends StatelessWidget {
     final isSelected = currentIndex == index;
     final activeColor = isDark ? AppColors.mintContainer : AppColors.primary;
     final inactiveColor = context.appTextMuted;
+    final activeAroundColor = AppColors.mintContainer;
 
     return InkWell(
       onTap: () => onTap(index),
       borderRadius: BorderRadius.circular(12),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -49,6 +51,8 @@ class CustomBottomNavBar extends StatelessWidget {
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                 color: isSelected ? activeColor : inactiveColor,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
@@ -63,12 +67,15 @@ class CustomBottomNavBar extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: context.appNavBarBg,
-        border: Border(top: BorderSide(color: context.appNavBarBorder, width: 1)),
+        border:
+            Border(top: BorderSide(color: context.appNavBarBorder, width: 1.3)),
+        borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(28), topRight: Radius.circular(28)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.1),
             blurRadius: 10,
-            offset: const Offset(0, -4),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -76,20 +83,20 @@ class CustomBottomNavBar extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          // 1. Settings (Right in RTL / Left in LTR)
+          // 1. Settings (Index 3)
           _buildNavItem(
             context: context,
-            icon: Icons.settings_outlined,
+            icon: Iconsax.setting_2,
             label: 'الإعدادات',
-            index: 2,
+            index: 3,
           ),
 
-          // 2. Groups
+          // 2. Members / Users (Index 2 - beside Groups across Center FAB)
           _buildNavItem(
             context: context,
-            icon: Icons.groups_2_outlined,
-            label: 'المجموعات والتقسيم',
-            index: 1,
+            icon: Iconsax.people,
+            label: 'الأعضاء',
+            index: 2,
           ),
 
           // 3. Center Add Button
@@ -112,7 +119,7 @@ class CustomBottomNavBar extends StatelessWidget {
                       ),
                     ],
                   ),
-                  child: const Icon(Icons.add, color: Colors.white, size: 26),
+                  child: const Icon(Iconsax.add, color: Colors.white, size: 26),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -127,10 +134,18 @@ class CustomBottomNavBar extends StatelessWidget {
             ),
           ),
 
-          // 4. Home
+          // 4. Groups (Index 1)
           _buildNavItem(
             context: context,
-            icon: Icons.account_balance_wallet_outlined,
+            icon: Iconsax.profile_2user,
+            label: 'المجموعات',
+            index: 1,
+          ),
+
+          // 5. Home (Index 0)
+          _buildNavItem(
+            context: context,
+            icon: Iconsax.home_1,
             label: 'الرئيسية',
             index: 0,
           ),

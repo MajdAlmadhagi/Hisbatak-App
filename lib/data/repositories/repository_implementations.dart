@@ -7,18 +7,30 @@ import '../../domain/repositories/i_profile_repository.dart';
 import '../../domain/repositories/i_budget_repository.dart';
 import '../../domain/repositories/i_group_repository.dart';
 import '../datasources/local_datasources.dart';
+import '../datasources/preferences/app_preferences_data_source.dart';
 import '../models/app_models.dart';
 
 /// SOLID Principle: Dependency Inversion Principle (DIP) & Liskov Substitution Principle (LSP)
-/// [ProfileRepositoryImpl] implements [IProfileRepository] using injected [IProfileLocalDataSource].
+/// [ProfileRepositoryImpl] implements [IProfileRepository] using injected [IProfileLocalDataSource]
+/// for SQLite business data and [IAppPreferencesDataSource] for SharedPreferences UI/device state.
 class ProfileRepositoryImpl implements IProfileRepository {
   final IProfileLocalDataSource localDataSource;
+  final IAppPreferencesDataSource preferencesDataSource;
 
-  ProfileRepositoryImpl(this.localDataSource);
+  ProfileRepositoryImpl({
+    required this.localDataSource,
+    required this.preferencesDataSource,
+  });
 
   @override
   Future<UserProfile> getUserProfile() async {
-    return await localDataSource.getUserProfile();
+    final profile = await localDataSource.getUserProfile();
+    final isDark = await preferencesDataSource.isDarkMode();
+    final biometric = await preferencesDataSource.isBiometricEnabled();
+    return profile.copyWith(
+      isDarkMode: isDark,
+      biometricEnabled: biometric,
+    );
   }
 
   @override
@@ -36,21 +48,44 @@ class ProfileRepositoryImpl implements IProfileRepository {
       isConfigured: profile.isConfigured,
     );
     await localDataSource.saveUserProfile(model);
+    await preferencesDataSource.setDarkMode(profile.isDarkMode);
+    await preferencesDataSource.setBiometricEnabled(profile.biometricEnabled);
   }
 
   @override
   Future<void> updateBiometricSetting(bool enabled) async {
-    await localDataSource.updateBiometricSetting(enabled);
+    await preferencesDataSource.setBiometricEnabled(enabled);
   }
 
   @override
   Future<void> updateDarkModeSetting(bool isDark) async {
-    await localDataSource.updateDarkModeSetting(isDark);
+    await preferencesDataSource.setDarkMode(isDark);
+  }
+
+  @override
+  Future<bool> isDarkMode() async {
+    return await preferencesDataSource.isDarkMode();
+  }
+
+  @override
+  Future<bool> isBiometricEnabled() async {
+    return await preferencesDataSource.isBiometricEnabled();
   }
 
   @override
   Future<void> resetAllData() async {
     await localDataSource.clearAllData();
+    await preferencesDataSource.clearAllPreferences();
+  }
+
+  @override
+  Future<bool> hasSeenOnboarding() async {
+    return await preferencesDataSource.hasSeenOnboarding();
+  }
+
+  @override
+  Future<void> setOnboardingCompleted() async {
+    await preferencesDataSource.setOnboardingCompleted(completed: true);
   }
 }
 
@@ -103,33 +138,13 @@ class BudgetRepositoryImpl implements IBudgetRepository {
 
   @override
   Future<void> addTransaction(TransactionItem transaction) async {
-    final model = TransactionModel(
-      id: transaction.id,
-      title: transaction.title,
-      amount: transaction.amount,
-      category: transaction.category,
-      categoryIcon: transaction.categoryIcon,
-      paymentMethod: transaction.paymentMethod,
-      dateTime: transaction.dateTime,
-      type: transaction.type,
-      isSynced: transaction.isSynced,
-    );
+    final model = TransactionModel.fromEntity(transaction);
     await localDataSource.addTransaction(model);
   }
 
   @override
   Future<void> updateTransaction(TransactionItem transaction) async {
-    final model = TransactionModel(
-      id: transaction.id,
-      title: transaction.title,
-      amount: transaction.amount,
-      category: transaction.category,
-      categoryIcon: transaction.categoryIcon,
-      paymentMethod: transaction.paymentMethod,
-      dateTime: transaction.dateTime,
-      type: transaction.type,
-      isSynced: transaction.isSynced,
-    );
+    final model = TransactionModel.fromEntity(transaction);
     await localDataSource.updateTransaction(model);
   }
 
@@ -207,6 +222,20 @@ class GroupRepositoryImpl implements IGroupRepository {
   }
 
   @override
+  Future<void> addGroupMember(GroupMemberEntity member) async {
+    final model = GroupMemberModel(
+      id: member.id,
+      groupId: member.groupId,
+      name: member.name,
+      avatarUrl: member.avatarUrl,
+      balance: member.balance,
+      note: member.note,
+      lastActivity: member.lastActivity,
+    );
+    await localDataSource.addGroupMember(model);
+  }
+
+  @override
   Future<void> addGroupExpense(GroupExpense expense) async {
     await localDataSource.addGroupExpense(expense);
   }
@@ -215,4 +244,45 @@ class GroupRepositoryImpl implements IGroupRepository {
   Future<void> settleMemberBalance({required String memberId, required String groupId}) async {
     await localDataSource.settleMemberBalance(memberId, groupId);
   }
+
+  @override
+  Future<List<GroupMemberWithGroupEntity>> getAllGroupMembers() async {
+    return await localDataSource.getAllGroupMembers();
+  }
+
+  @override
+  Future<List<ConsolidatedMemberEntity>> getConsolidatedMembers() async {
+    final rawMembers = await localDataSource.getAllGroupMembers();
+    final Map<String, List<GroupMemberWithGroupEntity>> grouped = {};
+
+    for (final member in rawMembers) {
+      final key = member.name.trim();
+      grouped.putIfAbsent(key, () => []).add(member);
+    }
+
+    final List<ConsolidatedMemberEntity> consolidated = [];
+    grouped.forEach((name, items) {
+      final memberships = items
+          .map((item) => MemberGroupMembership(
+                memberId: item.id,
+                groupId: item.groupId,
+                groupName: item.groupName,
+                groupType: item.groupType,
+                groupIcon: item.groupIcon,
+                balance: item.balance,
+                note: item.note,
+                lastActivity: item.lastActivity,
+              ))
+          .toList();
+
+      consolidated.add(ConsolidatedMemberEntity(
+        name: name,
+        avatarUrl: items.first.avatarUrl,
+        memberships: memberships,
+      ));
+    });
+
+    return consolidated;
+  }
 }
+

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:iconsax_flutter/iconsax_flutter.dart';
 import '../../core/theme/app_theme.dart';
 
 /// [CustomNumericKeypad] provides the fintech numeric keypad matching Stitch Screen 4.
@@ -77,7 +78,7 @@ class CustomNumericKeypad extends StatelessWidget {
             _buildKey(context, '.'),
             _buildKey(context, '0'),
             _buildKey(context, '',
-                icon: Icons.backspace_outlined, onTap: onDelete),
+                icon: Iconsax.arrow_left_2, onTap: onDelete),
           ],
         ),
       ],

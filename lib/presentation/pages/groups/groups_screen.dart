@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:hisbatak_app/presentation/widgets/custom_app_button.dart';
+import 'package:iconsax_flutter/iconsax_flutter.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../../core/theme/app_theme.dart';
@@ -8,7 +10,8 @@ import '../add_expense/add_expense_bottom_sheet.dart';
 import '../../widgets/debt_summary_card.dart';
 import '../../widgets/hisbatak_loader.dart';
 import '../../widgets/member_settle_card.dart';
-import '../../widgets/offline_status_pill.dart';
+import 'widgets/add_member_bottom_sheet.dart';
+import 'widgets/create_group_bottom_sheet.dart';
 
 /// [GroupsScreen] renders collaborative bill splitting, group members, and debts matching Screen 3.
 ///
@@ -19,13 +22,13 @@ class GroupsScreen extends StatelessWidget {
   IconData _getGroupIcon(String type) {
     switch (type) {
       case 'work':
-        return Icons.apartment_rounded;
+        return Iconsax.buildings;
       case 'home':
-        return Icons.home_rounded;
+        return Iconsax.home;
       case 'trip':
-        return Icons.hiking_rounded;
+        return Iconsax.routing;
       default:
-        return Icons.group_rounded;
+        return Iconsax.profile_2user;
     }
   }
 
@@ -35,6 +38,28 @@ class GroupsScreen extends StatelessWidget {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => AddExpenseBottomSheet(initialGroupId: groupId),
+    );
+  }
+
+  void _showCreateGroupModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => const CreateGroupBottomSheet(),
+    );
+  }
+
+  void _showAddMemberModal(
+      BuildContext context, String groupId, String groupName) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => AddMemberBottomSheet(
+        groupId: groupId,
+        groupName: groupName,
+      ),
     );
   }
 
@@ -78,7 +103,7 @@ class GroupsScreen extends StatelessWidget {
                     radius: 20,
                     backgroundColor:
                         isDark ? AppColors.cardDark : const Color(0xFFE2E8F0),
-                    child: Icon(Icons.person,
+                    child: Icon(Iconsax.user,
                         color: context.appTextSecondary, size: 22),
                   ),
                   const SizedBox(width: 10),
@@ -96,7 +121,9 @@ class GroupsScreen extends StatelessWidget {
                       Text(
                         state.selectedGroup?.name ?? AppStrings.groupWork,
                         style: TextStyle(
-                            fontSize: 11, color: context.appTextSecondary),
+                            fontWeight: FontWeight.w800,
+                            fontSize: 11,
+                            color: context.appTextSecondary),
                       ),
                     ],
                   ),
@@ -104,18 +131,10 @@ class GroupsScreen extends StatelessWidget {
               ),
               Row(
                 children: [
-                  const OfflineStatusPill(isCompact: true),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: context.appCardBackground,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: context.appBorder),
-                    ),
-                    child: Icon(Icons.picture_as_pdf_outlined,
-                        size: 18, color: context.appTextPrimary),
-                  ),
+                  CustomAppButton(
+                    icon: Iconsax.document_download,
+                    onPressed: () {},
+                  )
                 ],
               ),
             ],
@@ -151,7 +170,10 @@ class GroupsScreen extends StatelessWidget {
               ),
               Text(
                 '${state.groups.length} مجموعات نشطة',
-                style: TextStyle(fontSize: 11, color: context.appTextSecondary),
+                style: TextStyle(
+                    fontSize: 11,
+                    color: context.appTextSecondary,
+                    fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -207,19 +229,34 @@ class GroupsScreen extends StatelessWidget {
                   );
                 }),
                 // New Group Button
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: context.appSurfaceVariant,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    AppStrings.newGroup,
-                    style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: context.appTextSecondary),
+                GestureDetector(
+                  onTap: () => _showCreateGroupModal(context),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: context.appSurfaceVariant,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: context.appBorder),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Iconsax.add,
+                          size: 16,
+                          color: context.appTextPrimary,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          AppStrings.newGroup,
+                          style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: context.appTextPrimary),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -227,46 +264,160 @@ class GroupsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 20),
 
-          // Members and Settlements Section
+          // Members and Settlements Section Header
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                AppStrings.groupMembersAndSettlements,
-                style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: context.appTextPrimary),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    AppStrings.groupMembersAndSettlements,
+                    style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: context.appTextPrimary),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${state.activeMembers.length} أعضاء في ${state.selectedGroup?.name ?? ''}',
+                    style: TextStyle(
+                        fontSize: 11,
+                        color: isDark
+                            ? AppColors.mintContainer
+                            : AppColors.emerald,
+                        fontWeight: FontWeight.bold),
+                  ),
+                ],
               ),
-              Text(
-                '${state.activeMembers.length} أعضاء في ${state.selectedGroup?.name ?? ''}',
-                style: TextStyle(
-                    fontSize: 11,
-                    color: isDark ? AppColors.mintContainer : AppColors.emerald,
-                    fontWeight: FontWeight.bold),
-              ),
+              if (state.selectedGroup != null)
+                GestureDetector(
+                  onTap: () => _showAddMemberModal(
+                    context,
+                    state.selectedGroupId,
+                    state.selectedGroup?.name ?? '',
+                  ),
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? AppColors.cardDarkElevated
+                          : AppColors.mintFixed,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: isDark
+                            ? AppColors.emerald.withValues(alpha: 0.3)
+                            : const Color(0xFF6CF8BB),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Iconsax.user_add,
+                          size: 14,
+                          color: isDark
+                              ? AppColors.mintContainer
+                              : AppColors.primary,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          AppStrings.addMember,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: isDark
+                                ? AppColors.mintContainer
+                                : AppColors.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
             ],
           ),
           const SizedBox(height: 12),
 
-          // Members List
-          ...state.activeMembers.map((member) {
-            return MemberSettleCard(
-              member: member,
-              onSettle: () {
-                context.read<GroupsBloc>().add(
-                      SettleMemberEvent(
-                          memberId: member.id, groupId: member.groupId),
-                    );
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('تمت تسوية حساب ${member.name} بنجاح!'),
-                    backgroundColor: AppColors.emerald,
+          // Members List or Empty State
+          if (state.activeMembers.isEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+              decoration: BoxDecoration(
+                color: context.appCardBackground,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: context.appBorder),
+              ),
+              child: Column(
+                children: [
+                  Icon(
+                    Iconsax.profile_2user,
+                    size: 38,
+                    color: context.appTextSecondary.withValues(alpha: 0.6),
                   ),
-                );
-              },
-            );
-          }),
+                  const SizedBox(height: 10),
+                  Text(
+                    AppStrings.noMembersInGroup,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: context.appTextPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    AppStrings.noMembersInGroupDesc,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: context.appTextSecondary,
+                    ),
+                  ),
+                  if (state.selectedGroup != null) ...[
+                    const SizedBox(height: 14),
+                    ElevatedButton.icon(
+                      onPressed: () => _showAddMemberModal(
+                        context,
+                        state.selectedGroupId,
+                        state.selectedGroup?.name ?? '',
+                      ),
+                      icon: const Icon(Iconsax.user_add, size: 16),
+                      label: const Text(AppStrings.addFirstMember),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            isDark ? AppColors.emerald : AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            )
+          else
+            ...state.activeMembers.map((member) {
+              return MemberSettleCard(
+                member: member,
+                onSettle: () {
+                  context.read<GroupsBloc>().add(
+                        SettleMemberEvent(
+                            memberId: member.id, groupId: member.groupId),
+                      );
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('تمت تسوية حساب ${member.name} بنجاح!'),
+                      backgroundColor: AppColors.emerald,
+                    ),
+                  );
+                },
+              );
+            }),
           const SizedBox(height: 20),
 
           // Add Shared Bill Big Button
@@ -284,8 +435,7 @@ class GroupsScreen extends StatelessWidget {
               child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.receipt_long_rounded,
-                      size: 20, color: Colors.white),
+                  Icon(Iconsax.receipt_item, size: 20, color: Colors.white),
                   SizedBox(width: 8),
                   Text(
                     AppStrings.addSharedBill,
@@ -301,14 +451,14 @@ class GroupsScreen extends StatelessWidget {
           const SizedBox(height: 10),
 
           // Bottom automatic sync note
-          Center(
-            child: Text(
-              AppStrings.automaticSyncNote,
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 11, color: context.appTextMuted),
-            ),
-          ),
-          const SizedBox(height: 24),
+          // Center(
+          //   child: Text(
+          //     AppStrings.automaticSyncNote,
+          //     textAlign: TextAlign.center,
+          //     style: TextStyle(fontSize: 11, color: context.appTextMuted),
+          //   ),
+          // ),
+          // const SizedBox(height: 24),
         ],
       ),
     );

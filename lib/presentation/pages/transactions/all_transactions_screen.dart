@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:iconsax_flutter/iconsax_flutter.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../../core/theme/app_theme.dart';
@@ -29,15 +30,20 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
   String _searchQuery = '';
   String _selectedTypeFilter = 'all'; // 'all', 'expense', 'income'
   String _selectedCategoryFilter = 'all'; // 'all' or category name
+  bool _showFilter = false;
 
   final List<String> _categories = const [
     'الكل',
-    'بقالة وتموين',
-    'مطاعم ومقاهي',
-    'فواتير ومسكن',
-    'ترفيه وتسوق',
+    'مطاعم وكافيهات',
+    'تموين ومقاضي',
     'نقل ومواصلات',
-    'راتب ودخل',
+    'فواتير ومسكن',
+    'بنزين وطاقة',
+    'مياه وكهرباء',
+    'الأنترنت والهاتف',
+    'تعليم وجامعات',
+    'ترفية وتسوق',
+    'مصروفات أخرى',
   ];
 
   @override
@@ -88,14 +94,14 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
     return Scaffold(
       backgroundColor: context.appBackground,
       appBar: AppBar(
-        backgroundColor: context.appCardBackground,
+        //backgroundColor: context.appCardBackground,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
           icon: Icon(
-            Icons.arrow_back_ios_new_rounded,
+            Icons.chevron_left,
             color: context.appTextPrimary,
-            size: 20,
+            size: 30,
           ),
           onPressed: () {
             if (context.canPop()) {
@@ -110,6 +116,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
             final count =
                 (state is BudgetLoaded) ? state.allTransactions.length : 0;
             return Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   AppStrings.allTransactionsTitle,
@@ -143,10 +150,10 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
             );
           },
         ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1.0),
-          child: Container(color: context.appBorder, height: 1.0),
-        ),
+        // bottom: PreferredSize(
+        //   preferredSize: const Size.fromHeight(1.0),
+        //   child: Container(color: context.appBorder, height: 1.0),
+        // ),
       ),
       body: BlocBuilder<BudgetBloc, BudgetState>(
         builder: (context, state) {
@@ -161,8 +168,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.error_outline_rounded,
-                      size: 48, color: AppColors.expense),
+                  Icon(Iconsax.info_circle, size: 48, color: AppColors.expense),
                   const SizedBox(height: 12),
                   Text(state.message,
                       style: TextStyle(color: context.appTextPrimary)),
@@ -211,10 +217,16 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: context.appCardBackground,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: context.appBorder),
-                  ),
+                      color: context.appCardBackground,
+                      borderRadius: BorderRadius.circular(16),
+                      //border: Border.all(color: context.appBorder),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        )
+                      ]),
                   child: Row(
                     children: [
                       // Total Income
@@ -253,6 +265,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                               Text(
                                 AppStrings.totalExpenses,
                                 style: TextStyle(
+                                    fontWeight: FontWeight.w800,
                                     fontSize: 11,
                                     color: context.appTextSecondary),
                               ),
@@ -307,50 +320,20 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Search Bar
-                Container(
-                  decoration: BoxDecoration(
-                    color: context.appCardBackground,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: context.appBorder),
-                  ),
-                  child: TextField(
-                    controller: _searchController,
-                    onChanged: (val) =>
-                        setState(() => _searchQuery = val.trim()),
-                    style:
-                        TextStyle(color: context.appTextPrimary, fontSize: 13),
-                    decoration: InputDecoration(
-                      hintText: AppStrings.searchTransactionPlaceholder,
-                      hintStyle:
-                          TextStyle(color: context.appTextMuted, fontSize: 12),
-                      prefixIcon: Icon(Icons.search_rounded,
-                          color: context.appTextSecondary, size: 20),
-                      suffixIcon: _searchQuery.isNotEmpty
-                          ? IconButton(
-                              icon: Icon(Icons.clear_rounded,
-                                  color: context.appTextSecondary, size: 18),
-                              onPressed: () {
-                                _searchController.clear();
-                                setState(() => _searchQuery = '');
-                              },
-                            )
-                          : null,
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 12),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-
                 // Type Filter Tabs (الكل / مصروفات / دخل)
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
+                    color: context.appCardBackground,
                     borderRadius: BorderRadius.circular(12),
                     //border: Border.all(color: context.appBorder),
+                    // boxShadow: [
+                    //   BoxShadow(
+                    //     color: Colors.black.withOpacity(0.1),
+                    //     //  blurRadius: ,
+                    //     offset: const Offset(0, 2),
+                    //   ),
+                    // ],
                   ),
                   child: Row(
                     children: [
@@ -377,75 +360,141 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                     ],
                   ),
                 ),
+
+                const SizedBox(height: 12),
+
+                // Search Bar
+                Container(
+                  decoration: BoxDecoration(
+                    color: context.appCardBackground,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: context.appBorder),
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: (val) =>
+                        setState(() => _searchQuery = val.trim()),
+                    style:
+                        TextStyle(color: context.appTextPrimary, fontSize: 13),
+                    decoration: InputDecoration(
+                      hintText: AppStrings.searchTransactionPlaceholder,
+                      hintStyle:
+                          TextStyle(color: context.appTextMuted, fontSize: 12),
+                      prefixIcon: Icon(Iconsax.search_normal,
+                          color: context.appTextSecondary, size: 20),
+                      suffixIcon: _searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: Icon(Iconsax.close_circle,
+                                  color: context.appTextSecondary, size: 18),
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() => _searchQuery = '');
+                              },
+                            )
+                          : null,
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 12),
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 10),
 
-                Text('فلترة حسب التصنيف',
-                    style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                        color: context.appTextPrimary)),
+                Row(
+                  children: [
+                    Icon(
+                      Iconsax.filter,
+                      color: context.appTextSecondary,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 8),
+                    Text('فلترة حسب التصنيف',
+                        style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: context.appTextPrimary)),
+                    const SizedBox(width: 8),
+                    InkWell(
+                      onTap: () {
+                        setState(() {
+                          _showFilter = !_showFilter;
+                        });
+                      },
+                      child: Icon(
+                        _showFilter
+                            ? Icons.arrow_drop_up
+                            : Icons.arrow_drop_down,
+                        color: context.appTextSecondary,
+                        size: 19,
+                      ),
+                    ),
+                  ],
+                ),
 
                 const SizedBox(
                   height: 3,
                 ),
 
                 // Horizontal Category Filter Chips
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: _categories.map((cat) {
-                      final isSelected =
-                          (_selectedCategoryFilter == 'all' && cat == 'الكل') ||
-                              (_selectedCategoryFilter == cat);
-                      return Padding(
-                        padding: const EdgeInsets.only(left: 8),
-                        child: FilterChip(
-                          selected: isSelected,
-                          showCheckmark: true,
-                          checkmarkColor: isSelected
-                              ? (isDark
-                                  ? AppColors.mintContainer
-                                  : AppColors.emerald)
-                              : context.appTextSecondary,
-                          label: Text(
-                            cat,
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: isSelected
-                                  ? FontWeight.bold
-                                  : FontWeight.w500,
-                              color: isSelected
-                                  ? (isDark
-                                      ? AppColors.mintContainer
-                                      : AppColors.emerald)
-                                  : context.appTextSecondary,
-                            ),
-                          ),
-                          backgroundColor: context.appCardBackground,
-                          selectedColor: isDark
-                              ? AppColors.emerald.withValues(alpha: 0.25)
-                              : AppColors.mintFixed,
-                          side: BorderSide(
-                            width: 1.6,
-                            color: isSelected
-                                ? (isDark
-                                    ? AppColors.emerald
-                                    : AppColors.emerald)
-                                : context.appBorder,
-                          ),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10)),
-                          onSelected: (_) {
-                            setState(() {
-                              _selectedCategoryFilter =
-                                  (cat == 'الكل') ? 'all' : cat;
-                            });
-                          },
+                _showFilter
+                    ? SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: _categories.map((cat) {
+                            final isSelected =
+                                (_selectedCategoryFilter == 'all' &&
+                                        cat == 'الكل') ||
+                                    (_selectedCategoryFilter == cat);
+                            return Padding(
+                              padding: const EdgeInsets.only(left: 8),
+                              child: FilterChip(
+                                selected: isSelected,
+                                showCheckmark: true,
+                                checkmarkColor: isSelected
+                                    ? (isDark
+                                        ? AppColors.mintContainer
+                                        : AppColors.emerald)
+                                    : context.appTextSecondary,
+                                label: Text(
+                                  cat,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: isSelected
+                                        ? FontWeight.bold
+                                        : FontWeight.w500,
+                                    color: isSelected
+                                        ? (isDark
+                                            ? AppColors.mintContainer
+                                            : AppColors.emerald)
+                                        : context.appTextSecondary,
+                                  ),
+                                ),
+                                backgroundColor: context.appCardBackground,
+                                selectedColor: isDark
+                                    ? AppColors.emerald.withValues(alpha: 0.25)
+                                    : AppColors.mintFixed,
+                                side: BorderSide(
+                                  width: 1.6,
+                                  color: isSelected
+                                      ? (isDark
+                                          ? AppColors.emerald
+                                          : AppColors.emerald)
+                                      : context.appBorder,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10)),
+                                onSelected: (_) {
+                                  setState(() {
+                                    _selectedCategoryFilter =
+                                        (cat == 'الكل') ? 'all' : cat;
+                                  });
+                                },
+                              ),
+                            );
+                          }).toList(),
                         ),
-                      );
-                    }).toList(),
-                  ),
-                ),
+                      )
+                    : const SizedBox.shrink(),
                 const SizedBox(height: 16),
 
                 // Transactions List or Empty State
@@ -458,7 +507,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
-                          Icons.receipt_long_outlined,
+                          Iconsax.receipt_item,
                           size: 56,
                           color: context.appTextMuted.withValues(alpha: 0.5),
                         ),

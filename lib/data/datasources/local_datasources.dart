@@ -1,15 +1,13 @@
-import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import '../../core/database/app_database.dart';
 import '../models/app_models.dart';
 import '../../domain/entities/expense_split_entity.dart';
 
+
 /// Contract class for Profile Data Source (ISP)
 abstract class IProfileLocalDataSource {
   Future<UserProfileModel> getUserProfile();
   Future<void> saveUserProfile(UserProfileModel profile);
-  Future<void> updateBiometricSetting(bool enabled);
-  Future<void> updateDarkModeSetting(bool isDark);
 
   ///Clear all data of database from device
   Future<void> clearAllData();
@@ -52,28 +50,6 @@ class ProfileLocalDataSourceImpl implements IProfileLocalDataSource {
       'user_profile',
       profile.toMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
-    );
-  }
-
-  @override
-  Future<void> updateBiometricSetting(bool enabled) async {
-    final db = await appDatabase.database;
-    await db.update(
-      'user_profile',
-      {'biometric_enabled': enabled ? 1 : 0},
-      where: 'id = ?',
-      whereArgs: ['user_me'],
-    );
-  }
-
-  @override
-  Future<void> updateDarkModeSetting(bool isDark) async {
-    final db = await appDatabase.database;
-    await db.update(
-      'user_profile',
-      {'is_dark_mode': isDark ? 1 : 0},
-      where: 'id = ?',
-      whereArgs: ['user_me'],
     );
   }
 
@@ -122,12 +98,33 @@ class BudgetLocalDataSourceImpl implements IBudgetLocalDataSource {
   @override
   Future<List<TransactionModel>> getTransactions({int? limit}) async {
     final db = await appDatabase.database;
-    final results = await db.query(
-      'transactions',
-      where: 'deleted_at IS NULL',
-      orderBy: 'date_time DESC',
-      limit: limit,
-    );
+    try {
+      await db.execute('ALTER TABLE transactions ADD COLUMN expense_id TEXT');
+    } catch (_) {}
+    try {
+      await db.execute('ALTER TABLE transactions ADD COLUMN group_id TEXT');
+    } catch (_) {}
+
+    final limitClause = limit != null ? 'LIMIT $limit' : '';
+    final results = await db.rawQuery('''
+      SELECT 
+        t.*,
+        g.name AS group_name,
+        (
+          SELECT GROUP_CONCAT(m.name, ', ')
+          FROM expense_splits s
+          JOIN group_members m ON m.id = s.member_id AND m.group_id = s.group_id
+          WHERE s.expense_id = t.expense_id 
+            AND s.deleted_at IS NULL 
+            AND m.deleted_at IS NULL
+            AND s.member_id != 'user_me'
+        ) AS member_names
+      FROM transactions t
+      LEFT JOIN groups g ON g.id = t.group_id AND g.deleted_at IS NULL
+      WHERE t.deleted_at IS NULL
+      ORDER BY t.date_time DESC
+      $limitClause
+    ''');
     return results.map((m) => TransactionModel.fromMap(m)).toList();
   }
 
@@ -186,8 +183,24 @@ class BudgetLocalDataSourceImpl implements IBudgetLocalDataSource {
       }
     }
 
+    final now = _nowUtc();
     await db.update('transactions', _editedLocally(transaction.toMap()),
         where: 'id = ? AND deleted_at IS NULL', whereArgs: [transaction.id]);
+
+    // Cascade update to group expense if linked
+    if (transaction.expenseId != null && transaction.expenseId!.isNotEmpty) {
+      await db.update(
+        'group_expenses',
+        {
+          'title': transaction.title,
+          'category': transaction.category,
+          'updated_at': now,
+          'is_synced': 0,
+        },
+        where: 'id = ? AND deleted_at IS NULL',
+        whereArgs: [transaction.expenseId],
+      );
+    }
   }
 
   @override
@@ -199,6 +212,7 @@ class BudgetLocalDataSourceImpl implements IBudgetLocalDataSource {
       final oldTx = oldTxRes.first;
       final oldAmount = (oldTx['amount'] as num).toDouble();
       final oldType = oldTx['type'] as String;
+      final expenseId = oldTx['expense_id'] as String?;
 
       // Revert transaction effect from available balance
       final profileRes = await db
@@ -223,6 +237,22 @@ class BudgetLocalDataSourceImpl implements IBudgetLocalDataSource {
         where: 'id = ?',
         whereArgs: [id],
       );
+
+      // Cascade soft-delete to linked group expense and splits
+      if (expenseId != null && expenseId.isNotEmpty) {
+        await db.update(
+          'group_expenses',
+          {'deleted_at': now, 'updated_at': now, 'is_synced': 0},
+          where: 'id = ?',
+          whereArgs: [expenseId],
+        );
+        await db.update(
+          'expense_splits',
+          {'deleted_at': now, 'updated_at': now, 'is_synced': 0},
+          where: 'expense_id = ?',
+          whereArgs: [expenseId],
+        );
+      }
     }
   }
 
@@ -245,8 +275,10 @@ abstract class IGroupLocalDataSource {
   Future<GroupModel?> getGroupById(String groupId);
   Future<List<GroupMemberModel>> getGroupMembers(String groupId);
   Future<void> addGroup(GroupModel group);
+  Future<void> addGroupMember(GroupMemberModel member);
   Future<void> addGroupExpense(GroupExpense expense);
   Future<void> settleMemberBalance(String memberId, String groupId);
+  Future<List<GroupMemberWithGroupModel>> getAllGroupMembers();
 }
 
 /// What member `m` owes you, rounded to 2 decimals (negative: you owe them):
@@ -320,11 +352,32 @@ class GroupLocalDataSourceImpl implements IGroupLocalDataSource {
   }
 
   @override
+  Future<List<GroupMemberWithGroupModel>> getAllGroupMembers() async {
+    final db = await appDatabase.database;
+    final results = await db.rawQuery('''
+      SELECT m.*, g.name AS group_name, g.type AS group_type, g.icon_name AS group_icon, $memberBalanceSql AS balance
+      FROM group_members m
+      JOIN groups g ON g.id = m.group_id
+      WHERE m.deleted_at IS NULL AND g.deleted_at IS NULL
+      ORDER BY m.name COLLATE NOCASE ASC, g.created_at ASC
+    ''');
+    return results.map((m) => GroupMemberWithGroupModel.fromMap(m)).toList();
+  }
+
+  @override
   Future<void> addGroup(GroupModel group) async {
     final db = await appDatabase.database;
     await db.insert('groups', _editedLocally(group.toMap()),
         conflictAlgorithm: ConflictAlgorithm.replace);
   }
+
+  @override
+  Future<void> addGroupMember(GroupMemberModel member) async {
+    final db = await appDatabase.database;
+    await db.insert('group_members', _editedLocally(member.toMap()),
+        conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
 
   @override
   Future<void> addGroupExpense(GroupExpense expense) async {

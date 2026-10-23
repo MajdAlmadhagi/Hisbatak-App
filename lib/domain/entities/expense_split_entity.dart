@@ -35,7 +35,8 @@ class ParticipantSplit extends Equatable {
   }
 
   @override
-  List<Object?> get props => [memberId, memberName, amount, percentage, isPayer];
+  List<Object?> get props =>
+      [memberId, memberName, amount, percentage, isPayer];
 }
 
 /// [GroupExpense] represents an added expense to be saved and split.
@@ -136,6 +137,31 @@ class PercentageSplitStrategy implements ISplitCalculationStrategy {
         memberId: id,
         memberName: memberNames[id] ?? id,
         amount: share,
+        percentage: pct,
+        isPayer: id == payerId,
+      );
+    }).toList();
+  }
+}
+
+/// Strategy for custom amount splitting (مخصص بالمبلغ)
+class CustomAmountSplitStrategy implements ISplitCalculationStrategy {
+  @override
+  List<ParticipantSplit> calculateSplits({
+    required double totalAmount,
+    required List<String> memberIds,
+    required Map<String, String> memberNames,
+    required String payerId,
+    Map<String, double>? customValues,
+  }) {
+    if (memberIds.isEmpty) return [];
+    return memberIds.map((id) {
+      final amount = customValues?[id] ?? (totalAmount / memberIds.length);
+      final pct = totalAmount > 0 ? (amount / totalAmount) * 100.0 : 0.0;
+      return ParticipantSplit(
+        memberId: id,
+        memberName: memberNames[id] ?? id,
+        amount: amount,
         percentage: pct,
         isPayer: id == payerId,
       );

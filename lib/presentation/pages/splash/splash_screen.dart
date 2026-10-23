@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:iconsax_flutter/iconsax_flutter.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_strings.dart';
+import '../../../core/di/injection_container.dart' as di;
+import '../../../domain/repositories/i_profile_repository.dart';
 import '../../bloc/profile/profile_bloc.dart';
 import '../../widgets/hisbatak_loader.dart';
 
@@ -45,12 +48,21 @@ class _SplashScreenState extends State<SplashScreen>
   static const _maximumWait = Duration(seconds: 10);
 
   /// Leaves as soon as the profile has loaded (and the minimum time has
-  /// passed): to home if it is already configured, otherwise to profile setup.
+  /// passed): to onboarding for first time users, to home if configured, otherwise to profile setup.
   Future<void> _navigateWhenReady() async {
     final profileState = _waitForProfile(context.read<ProfileBloc>());
     await Future<void>.delayed(_minimumDisplay);
     final state = await profileState;
     if (!mounted) return;
+
+    // First time install check: if onboarding hasn't been completed, route to OnboardingScreen
+    final hasSeenOnboarding = await di.sl<IProfileRepository>().hasSeenOnboarding();
+    if (!mounted) return;
+    if (!hasSeenOnboarding) {
+      context.go('/onboarding');
+      return;
+    }
+
     if (state is ProfileLoaded && state.profile.isConfigured) {
       context.go('/home');
     } else {
@@ -93,7 +105,7 @@ class _SplashScreenState extends State<SplashScreen>
                     // Offline Ready Badge
                     const Row(
                       children: [
-                        Icon(Icons.wifi_off_rounded,
+                        Icon(Iconsax.cloud_cross,
                             size: 16, color: Color(0xFF6CF8BB)),
                         SizedBox(width: 6),
                         Text(
@@ -205,7 +217,7 @@ class _SplashScreenState extends State<SplashScreen>
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.check_circle,
+                          Icon(Iconsax.tick_circle,
                               size: 16, color: Color(0xFF10B981)),
                           SizedBox(width: 8),
                           Text(

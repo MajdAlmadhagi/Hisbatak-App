@@ -242,6 +242,7 @@ extension ThemeContextExtension on BuildContext {
   ColorScheme get colorScheme => Theme.of(this).colorScheme;
 
   Color get appBackground => isDarkMode ? AppColors.primaryDark : AppColors.background;
+  Color get appSurface => isDarkMode ? AppColors.cardDark : AppColors.surface;
   Color get appCardBackground => isDarkMode ? AppColors.cardDarkElevated : Colors.white;
   Color get appSurfaceVariant => isDarkMode ? AppColors.cardDark : AppColors.surfaceVariant;
   Color get appTextPrimary => isDarkMode ? Colors.white : AppColors.textPrimary;

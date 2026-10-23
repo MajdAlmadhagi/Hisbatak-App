@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:hisbatak_app/presentation/widgets/expense_donut_chart.dart';
+import 'package:iconsax_flutter/iconsax_flutter.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_theme.dart';
@@ -24,10 +26,12 @@ class BudgetCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: context.appCardBackground,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: context.appBorder),
+        // border: Border.all(color: context.appBorder),
+        border: Border(top: BorderSide(color: AppColors.emerald, width: 2.8)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: context.isDarkMode ? 0.2 : 0.03),
+            color:
+                Colors.black.withValues(alpha: context.isDarkMode ? 0.2 : 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -49,26 +53,33 @@ class BudgetCard extends StatelessWidget {
                   color: context.appTextSecondary,
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.mintFixed,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.trending_up_rounded, size: 14, color: Color(0xFF005236)),
-                    SizedBox(width: 4),
-                    Text(
-                      AppStrings.thisMonthTrending,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF005236),
-                      ),
+              Column(
+                spacing: 6,
+                children: [
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.mintFixed,
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                  ],
-                ),
+                    child: const Row(
+                      children: [
+                        Icon(Iconsax.trend_up,
+                            size: 14, color: Color(0xFF005236)),
+                        SizedBox(width: 4),
+                        Text(
+                          AppStrings.thisMonthTrending,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF005236),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -80,7 +91,8 @@ class BudgetCard extends StatelessWidget {
             textBaseline: TextBaseline.alphabetic,
             children: [
               Text(
-                Formatters.formatCurrency(summary.totalAvailable, showDecimals: false)
+                Formatters.formatCurrency(summary.totalAvailable,
+                        showDecimals: false)
                     .replaceAll(' ر.س', ''),
                 style: TextStyle(
                   fontSize: 34,
@@ -132,7 +144,8 @@ class BudgetCard extends StatelessWidget {
               value: progress,
               minHeight: 10,
               backgroundColor: context.appSurfaceVariant,
-              valueColor: const AlwaysStoppedAnimation<Color>(AppColors.emerald),
+              valueColor:
+                  const AlwaysStoppedAnimation<Color>(AppColors.emerald),
             ),
           ),
           const SizedBox(height: 12),
@@ -157,10 +170,56 @@ class BudgetCard extends StatelessWidget {
                 ),
                 child: Text(
                   AppStrings.liveUpdate,
-                  style: TextStyle(fontSize: 10, color: context.appTextSecondary),
+                  style:
+                      TextStyle(fontSize: 10, color: context.appTextSecondary),
                 ),
               ),
             ],
+          ),
+          const Divider(
+            thickness: 1,
+            height: 20,
+          ),
+
+          Center(
+            child: ElevatedButton.icon(
+               
+                onPressed: () async {
+                  await showDialog(
+                      context: context,
+                      builder: (context) {
+                        return AlertDialog(
+                          title: Text('تفاصيل النفقات الشهرية'),
+                          content:
+                              ExpenseDonutChart(categories: summary.categories),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              style: TextButton.styleFrom(
+                                //foregroundColor: AppColors.expense,
+
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(9),
+                                  side: BorderSide(
+                                      color: AppColors.emerald, width: 1.5),
+                                ),
+                              ),
+                              child: Text('إخفاء',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  )),
+                            ),
+                          ],
+                        );
+                      });
+                },
+                icon: Icon(Iconsax.graph),
+                label: Text(
+                  'عرض تفاصيل النفقات الشهرية',
+                  style: TextStyle(fontSize: 14),
+                ),
+                
+                ),
           ),
         ],
       ),

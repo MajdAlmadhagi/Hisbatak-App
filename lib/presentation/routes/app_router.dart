@@ -1,5 +1,7 @@
 import 'package:go_router/go_router.dart';
+import '../pages/about/about_app_screen.dart';
 import '../pages/main_layout/main_navigation_screen.dart';
+import '../pages/onboarding/onboarding_screen.dart';
 import '../pages/profile_setup/profile_setup_screen.dart';
 import '../pages/splash/splash_screen.dart';
 import '../pages/transactions/all_transactions_screen.dart';
@@ -18,6 +20,11 @@ class AppRouter {
         builder: (context, state) => const SplashScreen(),
       ),
       GoRoute(
+        path: '/onboarding',
+        name: 'onboarding',
+        builder: (context, state) => const OnboardingScreen(),
+      ),
+      GoRoute(
         path: '/setup-profile',
         name: 'setup_profile',
         builder: (context, state) => const ProfileSetupScreen(),
@@ -33,14 +40,24 @@ class AppRouter {
         builder: (context, state) => const MainNavigationScreen(initialIndex: 1),
       ),
       GoRoute(
+        path: '/members',
+        name: 'members',
+        builder: (context, state) => const MainNavigationScreen(initialIndex: 2),
+      ),
+      GoRoute(
         path: '/settings',
         name: 'settings',
-        builder: (context, state) => const MainNavigationScreen(initialIndex: 2),
+        builder: (context, state) => const MainNavigationScreen(initialIndex: 3),
       ),
       GoRoute(
         path: '/all-transactions',
         name: 'all_transactions',
         builder: (context, state) => const AllTransactionsScreen(),
+      ),
+      GoRoute(
+        path: '/about',
+        name: 'about',
+        builder: (context, state) => const AboutAppScreen(),
       ),
     ],
   );

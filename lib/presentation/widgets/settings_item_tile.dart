@@ -8,7 +8,7 @@ import '../../core/theme/app_theme.dart';
 class SettingsItemTile extends StatelessWidget {
   final IconData icon;
   final String title;
-  final String subtitle;
+  final String? subtitle;
   final Widget? trailing;
   final VoidCallback? onTap;
   final bool isDestructive;
@@ -19,7 +19,7 @@ class SettingsItemTile extends StatelessWidget {
     super.key,
     required this.icon,
     required this.title,
-    required this.subtitle,
+    this.subtitle,
     this.trailing,
     this.onTap,
     this.isDestructive = false,
@@ -94,13 +94,15 @@ class SettingsItemTile extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: defaultSubtitleColor,
+                  if (subtitle != null)
+                    Text(
+                      subtitle!,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 11,
+                        color: defaultSubtitleColor,
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),

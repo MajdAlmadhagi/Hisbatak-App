@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hisbatak_app/core/utils/app_helpers.dart';
+import 'package:hisbatak_app/presentation/widgets/custom_app_button.dart';
+import 'package:iconsax_flutter/iconsax_flutter.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../../core/theme/app_theme.dart';
@@ -43,6 +45,7 @@ class HomeBudgetScreen extends StatelessWidget {
 
   Widget _buildContent(BuildContext context, BudgetLoaded state) {
     final isDark = context.isDarkMode;
+    final lastTransactions = state.allTransactions.take(5);
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -120,27 +123,34 @@ class HomeBudgetScreen extends StatelessWidget {
                           Text(
                             AppStrings.homeAndBudget,
                             style: TextStyle(
-                                fontSize: 11, color: context.appTextSecondary),
+                                fontSize: 11,
+                                color: context.appTextSecondary,
+                                fontWeight: FontWeight.w800),
                           ),
                         ],
                       ),
                     ),
-                    const OfflineStatusPill(isCompact: true),
+                    //const OfflineStatusPill(isCompact: true),
                     const SizedBox(width: 8),
                     // IconButton(
-                    //   icon: Icon(Icons.search,
+                    //   icon: Icon(Iconsax.search_normal,
                     //       size: 20, color: context.appTextPrimary),
                     //   onPressed: () {},
                     //   padding: EdgeInsets.zero,
                     //   constraints: const BoxConstraints(),
                     // ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      icon: Icon(Icons.notifications_none_rounded,
-                          size: 20, color: context.appTextPrimary),
+
+                    CustomAppButton(
+                      icon: Icons.sync_rounded,
                       onPressed: () {},
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
+//text: '',
+                    ),
+                    const SizedBox(width: 8),
+
+                    CustomAppButton(
+                      icon: Iconsax.notification,
+                      onPressed: () {},
+//text: '',
                     ),
                   ],
                 );
@@ -154,10 +164,6 @@ class HomeBudgetScreen extends StatelessWidget {
 
             // Budget Summary Card
             BudgetCard(summary: state.summary),
-            const SizedBox(height: 16),
-
-            // Expense Donut Chart Card
-            ExpenseDonutChart(categories: state.summary.categories),
             const SizedBox(height: 16),
 
             // Wallet AI Insight Card
@@ -180,7 +186,7 @@ class HomeBudgetScreen extends StatelessWidget {
                           : AppColors.mintSoft,
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    child: const Icon(Icons.auto_awesome,
+                    child: const Icon(Iconsax.magicpen,
                         color: AppColors.emerald, size: 26),
                   ),
                   const SizedBox(width: 14),
@@ -190,7 +196,7 @@ class HomeBudgetScreen extends StatelessWidget {
                       children: [
                         Row(
                           children: [
-                            const Icon(Icons.auto_awesome,
+                            const Icon(Iconsax.magicpen,
                                 size: 14, color: AppColors.emerald),
                             const SizedBox(width: 4),
                             Text(
@@ -209,6 +215,7 @@ class HomeBudgetScreen extends StatelessWidget {
                         Text(
                           AppStrings.walletAiDescription,
                           style: TextStyle(
+                            fontWeight: FontWeight.w600,
                             fontSize: 11,
                             color: context.appTextPrimary,
                             height: 1.4,
@@ -261,7 +268,7 @@ class HomeBudgetScreen extends StatelessWidget {
                 ),
               ),
             ] else ...[
-              ...state.recentTransactions.map((tx) => TransactionListTile(
+              ...lastTransactions.map((tx) => TransactionListTile(
                     item: tx,
                     onTap: () => TransactionDetailsDialog.show(context, tx),
                   )),
@@ -280,7 +287,7 @@ class HomeBudgetScreen extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.verified_user_outlined,
+                  const Icon(Iconsax.shield_tick,
                       color: AppColors.emerald, size: 20),
                   const SizedBox(width: 10),
                   Expanded(

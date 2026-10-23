@@ -12,6 +12,10 @@ abstract class IGroupRepository {
   Future<List<GroupMemberEntity>> getGroupMembers(String groupId);
   Future<DebtSummary> getAggregatedDebtSummary();
   Future<void> addGroup(GroupEntity group);
+  Future<void> addGroupMember(GroupMemberEntity member);
   Future<void> addGroupExpense(GroupExpense expense);
   Future<void> settleMemberBalance({required String memberId, required String groupId});
+  Future<List<GroupMemberWithGroupEntity>> getAllGroupMembers();
+  Future<List<ConsolidatedMemberEntity>> getConsolidatedMembers();
 }
+

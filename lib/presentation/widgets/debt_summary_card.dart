@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:iconsax_flutter/iconsax_flutter.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_theme.dart';
@@ -34,7 +35,7 @@ class DebtSummaryCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Icon(Icons.account_balance_outlined, size: 20, color: context.appTextPrimary),
+                  Icon(Iconsax.bank, size: 20, color: context.appTextPrimary),
                   const SizedBox(width: 8),
                   Text(
                     AppStrings.totalBalanceSummary,
@@ -78,7 +79,7 @@ class DebtSummaryCard extends StatelessWidget {
                     children: [
                       const Row(
                         children: [
-                          Icon(Icons.arrow_upward_rounded, size: 14, color: AppColors.expense),
+                          Icon(Iconsax.arrow_up_3, size: 14, color: AppColors.expense),
                           SizedBox(width: 4),
                           Text(
                             AppStrings.youOwe,
@@ -120,7 +121,7 @@ class DebtSummaryCard extends StatelessWidget {
                     children: [
                       const Row(
                         children: [
-                          Icon(Icons.arrow_downward_rounded, size: 14, color: AppColors.income),
+                          Icon(Iconsax.arrow_down_2, size: 14, color: AppColors.income),
                           SizedBox(width: 4),
                           Text(
                             AppStrings.owesYou,

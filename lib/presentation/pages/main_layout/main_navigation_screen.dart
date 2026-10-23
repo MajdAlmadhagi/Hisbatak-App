@@ -4,6 +4,7 @@ import '../../widgets/custom_bottom_nav_bar.dart';
 import '../add_expense/add_expense_bottom_sheet.dart';
 import '../groups/groups_screen.dart';
 import '../home/home_budget_screen.dart';
+import '../members/all_members_screen.dart';
 import '../settings/settings_screen.dart';
 
 /// [MainNavigationScreen] provides the persistent bottom navigation shell for Hisbatak.
@@ -55,6 +56,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         children: const [
           HomeBudgetScreen(key: ValueKey('tab_home')),
           GroupsScreen(key: ValueKey('tab_groups')),
+          AllMembersScreen(key: ValueKey('tab_members')),
           SettingsScreen(key: ValueKey('tab_settings')),
         ],
       ),

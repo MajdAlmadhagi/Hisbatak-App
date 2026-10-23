@@ -15,6 +15,10 @@ class TransactionItem extends Equatable {
   final String paymentMethod;
   final DateTime dateTime;
   final TransactionType type;
+  final String? groupId;
+  final String? expenseId;
+  final String? groupName;
+  final List<String> memberNames;
   final bool isSynced;
 
   const TransactionItem({
@@ -26,10 +30,17 @@ class TransactionItem extends Equatable {
     required this.paymentMethod,
     required this.dateTime,
     required this.type,
+    this.groupId,
+    this.expenseId,
+    this.groupName,
+    this.memberNames = const [],
     required this.isSynced,
   });
 
   bool get isExpense => type == TransactionType.expense;
+  bool get hasGroup =>
+      (groupName != null && groupName!.isNotEmpty) ||
+      (groupId != null && groupId!.isNotEmpty);
 
   TransactionItem copyWith({
     String? id,
@@ -40,6 +51,10 @@ class TransactionItem extends Equatable {
     String? paymentMethod,
     DateTime? dateTime,
     TransactionType? type,
+    String? groupId,
+    String? expenseId,
+    String? groupName,
+    List<String>? memberNames,
     bool? isSynced,
   }) {
     return TransactionItem(
@@ -51,6 +66,10 @@ class TransactionItem extends Equatable {
       paymentMethod: paymentMethod ?? this.paymentMethod,
       dateTime: dateTime ?? this.dateTime,
       type: type ?? this.type,
+      groupId: groupId ?? this.groupId,
+      expenseId: expenseId ?? this.expenseId,
+      groupName: groupName ?? this.groupName,
+      memberNames: memberNames ?? this.memberNames,
       isSynced: isSynced ?? this.isSynced,
     );
   }
@@ -65,6 +84,10 @@ class TransactionItem extends Equatable {
         paymentMethod,
         dateTime,
         type,
+        groupId,
+        expenseId,
+        groupName,
+        memberNames,
         isSynced,
       ];
 }

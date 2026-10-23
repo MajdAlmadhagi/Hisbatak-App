@@ -1,6 +1,8 @@
 import 'package:get_it/get_it.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../database/app_database.dart';
 import '../../data/datasources/local_datasources.dart';
+import '../../data/datasources/preferences/app_preferences_data_source.dart';
 import '../../data/repositories/repository_implementations.dart';
 import '../../domain/repositories/i_profile_repository.dart';
 import '../../domain/repositories/i_budget_repository.dart';
@@ -20,10 +22,17 @@ final sl = GetIt.instance;
 /// SOLID Principle: Dependency Inversion Principle (DIP)
 /// Decouples concrete class construction from consumer widgets and components.
 Future<void> initDependencyInjection() async {
-  // 1. Core Database
+  // 1. SharedPreferences (UI & Device Preferences)
+  final sharedPreferences = await SharedPreferences.getInstance();
+  sl.registerLazySingleton<SharedPreferences>(() => sharedPreferences);
+  sl.registerLazySingleton<IAppPreferencesDataSource>(
+    () => AppPreferencesDataSourceImpl(sl()),
+  );
+
+  // 2. Core SQLite Database
   sl.registerLazySingleton<AppDatabase>(() => AppDatabase.instance);
 
-  // 2. Data Sources
+  // 3. Data Sources
   sl.registerLazySingleton<IProfileLocalDataSource>(
     () => ProfileLocalDataSourceImpl(sl()),
   );
@@ -34,9 +43,12 @@ Future<void> initDependencyInjection() async {
     () => GroupLocalDataSourceImpl(sl()),
   );
 
-  // 3. Repositories
+  // 4. Repositories
   sl.registerLazySingleton<IProfileRepository>(
-    () => ProfileRepositoryImpl(sl()),
+    () => ProfileRepositoryImpl(
+      localDataSource: sl(),
+      preferencesDataSource: sl(),
+    ),
   );
   sl.registerLazySingleton<IBudgetRepository>(
     () => BudgetRepositoryImpl(
@@ -61,7 +73,11 @@ Future<void> initDependencyInjection() async {
   sl.registerLazySingleton(() => GetGroupMembersUseCase(sl()));
   sl.registerLazySingleton(() => GetDebtSummaryUseCase(sl()));
   sl.registerLazySingleton(() => AddGroupExpenseUseCase(sl()));
+  sl.registerLazySingleton(() => AddGroupMemberUseCase(sl()));
+  sl.registerLazySingleton(() => AddGroupUseCase(sl()));
   sl.registerLazySingleton(() => SettleBalanceUseCase(sl()));
+  sl.registerLazySingleton(() => GetConsolidatedMembersUseCase(sl()));
+  sl.registerLazySingleton(() => GetAllGroupMembersUseCase(sl()));
 
   // 5. Presentation BLoCs & Cubits
   sl.registerFactory(
@@ -89,9 +105,13 @@ Future<void> initDependencyInjection() async {
       getGroupMembersUseCase: sl(),
       getDebtSummaryUseCase: sl(),
       addGroupExpenseUseCase: sl(),
+      addGroupMemberUseCase: sl(),
+      addGroupUseCase: sl(),
       settleBalanceUseCase: sl(),
+      getConsolidatedMembersUseCase: sl(),
     ),
   );
+
 
   sl.registerFactory(
     () => ThemeCubit(profileRepository: sl()),

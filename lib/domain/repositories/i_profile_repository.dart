@@ -10,5 +10,9 @@ abstract class IProfileRepository {
   Future<void> saveUserProfile(UserProfile profile);
   Future<void> updateBiometricSetting(bool enabled);
   Future<void> updateDarkModeSetting(bool isDark);
+  Future<bool> isDarkMode();
+  Future<bool> isBiometricEnabled();
   Future<void> resetAllData();
+  Future<bool> hasSeenOnboarding();
+  Future<void> setOnboardingCompleted();
 }

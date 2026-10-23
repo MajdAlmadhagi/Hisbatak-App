@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:iconsax_flutter/iconsax_flutter.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_theme.dart';
@@ -28,17 +29,17 @@ class TransactionDetailsDialog extends StatelessWidget {
   IconData _getCategoryIcon(String iconName) {
     switch (iconName) {
       case 'shopping_cart':
-        return Icons.shopping_cart_outlined;
+        return Iconsax.shopping_cart;
       case 'account_balance':
-        return Icons.account_balance_outlined;
+        return Iconsax.bank;
       case 'local_cafe':
-        return Icons.local_cafe_outlined;
+        return Iconsax.coffee;
       case 'wifi':
-        return Icons.wifi_rounded;
+        return Iconsax.wifi;
       case 'directions_car':
-        return Icons.directions_car_outlined;
+        return Iconsax.car;
       default:
-        return Icons.receipt_long_outlined;
+        return Iconsax.receipt_item;
     }
   }
 
@@ -54,10 +55,13 @@ class TransactionDetailsDialog extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF3B1219) : const Color(0xFFFFE4E6),
+                color:
+                    isDark ? const Color(0xFF3B1219) : const Color(0xFFFFE4E6),
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.delete_forever_rounded, color: isDark ? const Color(0xFFF87171) : AppColors.expense, size: 24),
+              child: Icon(Iconsax.trash,
+                  color: isDark ? const Color(0xFFF87171) : AppColors.expense,
+                  size: 24),
             ),
             const SizedBox(width: 12),
             Text(
@@ -78,7 +82,8 @@ class TransactionDetailsDialog extends StatelessWidget {
             height: 1.5,
           ),
         ),
-        actionsPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        actionsPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogCtx),
@@ -92,7 +97,9 @@ class TransactionDetailsDialog extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () {
-              context.read<BudgetBloc>().add(DeletePersonalTransactionEvent(item.id));
+              context
+                  .read<BudgetBloc>()
+                  .add(DeletePersonalTransactionEvent(item.id));
               Navigator.pop(dialogCtx); // close dialog
               Navigator.pop(context); // close bottom sheet
               ScaffoldMessenger.of(context).showSnackBar(
@@ -107,10 +114,12 @@ class TransactionDetailsDialog extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.expense,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
               elevation: 0,
             ),
-            child: const Text(AppStrings.delete, style: TextStyle(fontWeight: FontWeight.bold)),
+            child: const Text(AppStrings.delete,
+                style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -175,7 +184,8 @@ class TransactionDetailsDialog extends StatelessWidget {
                 ),
               ),
               IconButton(
-                icon: Icon(Icons.close_rounded, color: context.appTextMuted, size: 22),
+                icon: Icon(Iconsax.close_circle,
+                    color: context.appTextMuted, size: 22),
                 onPressed: () => Navigator.pop(context),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
@@ -200,15 +210,21 @@ class TransactionDetailsDialog extends StatelessWidget {
                   height: 56,
                   decoration: BoxDecoration(
                     color: isIncome
-                        ? (isDark ? AppColors.emerald.withValues(alpha: 0.25) : AppColors.mintFixed)
-                        : (isDark ? const Color(0xFF3B1219) : const Color(0xFFFFE4E6)),
+                        ? (isDark
+                            ? AppColors.emerald.withValues(alpha: 0.25)
+                            : AppColors.mintFixed)
+                        : (isDark
+                            ? const Color(0xFF3B1219)
+                            : const Color(0xFFFFE4E6)),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
                     _getCategoryIcon(item.categoryIcon),
                     color: isIncome
                         ? (isDark ? AppColors.mintContainer : AppColors.emerald)
-                        : (isDark ? const Color(0xFFF87171) : AppColors.expense),
+                        : (isDark
+                            ? const Color(0xFFF87171)
+                            : AppColors.expense),
                     size: 28,
                   ),
                 ),
@@ -232,16 +248,23 @@ class TransactionDetailsDialog extends StatelessWidget {
                     fontWeight: FontWeight.w900,
                     color: isIncome
                         ? (isDark ? AppColors.mintContainer : AppColors.income)
-                        : (isDark ? const Color(0xFFF87171) : AppColors.expense),
+                        : (isDark
+                            ? const Color(0xFFF87171)
+                            : AppColors.expense),
                   ),
                 ),
                 const SizedBox(height: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: isIncome
-                        ? (isDark ? AppColors.emerald.withValues(alpha: 0.2) : AppColors.mintSoft)
-                        : (isDark ? const Color(0xFF3B1219) : const Color(0xFFFFEBEA)),
+                        ? (isDark
+                            ? AppColors.emerald.withValues(alpha: 0.2)
+                            : AppColors.mintSoft)
+                        : (isDark
+                            ? const Color(0xFF3B1219)
+                            : const Color(0xFFFFEBEA)),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -250,8 +273,12 @@ class TransactionDetailsDialog extends StatelessWidget {
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
                       color: isIncome
-                          ? (isDark ? AppColors.mintContainer : AppColors.emerald)
-                          : (isDark ? const Color(0xFFF87171) : AppColors.expense),
+                          ? (isDark
+                              ? AppColors.mintContainer
+                              : AppColors.emerald)
+                          : (isDark
+                              ? const Color(0xFFF87171)
+                              : AppColors.expense),
                     ),
                   ),
                 ),
@@ -272,31 +299,121 @@ class TransactionDetailsDialog extends StatelessWidget {
               children: [
                 _buildDetailRow(
                   context,
-                  icon: Icons.calendar_today_outlined,
+                  icon: Iconsax.calendar_1,
                   label: AppStrings.transactionDate,
                   value: Formatters.formatArabicDate(item.dateTime),
                 ),
                 Divider(color: context.appBorder, height: 16),
                 _buildDetailRow(
                   context,
-                  icon: Icons.category_outlined,
+                  icon: Iconsax.category,
                   label: AppStrings.transactionCategory,
                   value: item.category,
                 ),
                 Divider(color: context.appBorder, height: 16),
                 _buildDetailRow(
                   context,
-                  icon: Icons.payment_outlined,
+                  icon: Iconsax.card,
                   label: AppStrings.paymentMethodLabel,
                   value: item.paymentMethod,
                 ),
+                if (item.hasGroup) ...[
+                  Divider(color: context.appBorder, height: 16),
+                  _buildDetailRow(
+                    context,
+                    icon: Iconsax.profile_2user,
+                    label: AppStrings.transactionGroup,
+                    value: item.groupName!,
+                  ),
+                ],
+                if (item.memberNames.isNotEmpty) ...[
+                  Divider(color: context.appBorder, height: 16),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Iconsax.people,
+                              size: 18, color: context.appTextSecondary),
+                          const SizedBox(width: 10),
+                          Text(
+                            'المشاركون بالعملية',
+                            style: TextStyle(
+                                fontSize: 13, color: context.appTextSecondary),
+                          ),
+                          const Spacer(),
+                          Text(
+                            '${item.memberNames.length} أعضاء',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: isDark
+                                  ? AppColors.mintContainer
+                                  : AppColors.emerald,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: item.memberNames.map((name) {
+                          return Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? AppColors.cardDarkElevated
+                                  : AppColors.mintSoft,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: isDark
+                                    ? AppColors.emerald.withValues(alpha: 0.3)
+                                    : const Color(0xFF6CF8BB),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                CircleAvatar(
+                                  radius: 9,
+                                  backgroundColor: isDark
+                                      ? AppColors.emerald
+                                      : AppColors.primary,
+                                  child: Text(
+                                    name.isNotEmpty ? name[0] : '?',
+                                    style: const TextStyle(
+                                        fontSize: 9,
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  name,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: context.appTextPrimary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ),
+                ],
                 Divider(color: context.appBorder, height: 16),
                 _buildDetailRow(
                   context,
-                  icon: Icons.verified_user_outlined,
+                  icon: Iconsax.shield_tick,
                   label: 'حالة الحفظ',
                   value: AppStrings.safeRecord,
-                  valueColor: isDark ? AppColors.mintContainer : AppColors.emerald,
+                  valueColor:
+                      isDark ? AppColors.mintContainer : AppColors.emerald,
                 ),
               ],
             ),
@@ -310,16 +427,19 @@ class TransactionDetailsDialog extends StatelessWidget {
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: () => _openEditModal(context),
-                  icon: const Icon(Icons.edit_outlined, size: 18),
-                  label: const Text(AppStrings.editTransaction, style: TextStyle(fontWeight: FontWeight.bold)),
+                  icon: const Icon(Iconsax.edit_2, size: 18),
+                  label: const Text(AppStrings.editTransaction,
+                      style: TextStyle(fontWeight: FontWeight.bold)),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 13),
-                    foregroundColor: isDark ? AppColors.mintContainer : AppColors.emerald,
+                    foregroundColor:
+                        isDark ? AppColors.mintContainer : AppColors.emerald,
                     side: BorderSide(
                       color: isDark ? AppColors.emerald : AppColors.emerald,
                       width: 1.5,
                     ),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14)),
                   ),
                 ),
               ),
@@ -329,17 +449,23 @@ class TransactionDetailsDialog extends StatelessWidget {
               Expanded(
                 child: ElevatedButton.icon(
                   onPressed: () => _showDeleteConfirmation(context),
-                  icon: const Icon(Icons.delete_outline_rounded, size: 18),
-                  label: const Text(AppStrings.deleteTransaction, style: TextStyle(fontWeight: FontWeight.bold)),
+                  icon: const Icon(Iconsax.trash, size: 18),
+                  label: const Text(AppStrings.deleteTransaction,
+                      style: TextStyle(fontWeight: FontWeight.bold)),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 13),
-                    backgroundColor: isDark ? const Color(0xFF3B1219) : const Color(0xFFFFE4E6),
-                    foregroundColor: isDark ? const Color(0xFFF87171) : AppColors.expense,
+                    backgroundColor: isDark
+                        ? const Color(0xFF3B1219)
+                        : const Color(0xFFFFE4E6),
+                    foregroundColor:
+                        isDark ? const Color(0xFFF87171) : AppColors.expense,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                       side: BorderSide(
-                        color: isDark ? const Color(0xFF5B1B26) : const Color(0xFFFECDD3),
+                        color: isDark
+                            ? const Color(0xFF5B1B26)
+                            : const Color(0xFFFECDD3),
                       ),
                     ),
                   ),
@@ -394,9 +520,12 @@ class _EditTransactionSheet extends StatefulWidget {
 class _EditTransactionSheetState extends State<_EditTransactionSheet> {
   late final TextEditingController _titleController;
   late final TextEditingController _amountController;
+  late final TextEditingController _groupNameController;
+  late final TextEditingController _newMemberController;
   late TransactionType _selectedType;
   late String _selectedCategory;
   late String _selectedPaymentMethod;
+  late List<String> _memberNames;
 
   final List<Map<String, String>> _categories = const [
     {'name': 'بقالة وتموين', 'icon': 'shopping_cart'},
@@ -410,6 +539,7 @@ class _EditTransactionSheetState extends State<_EditTransactionSheet> {
 
   final List<String> _paymentMethods = const [
     'مدى • من البطاقة',
+    'فاتورة مشتركة',
     'نقداً (كاش)',
     'تحويل بنكي',
     'Apple Pay',
@@ -420,10 +550,18 @@ class _EditTransactionSheetState extends State<_EditTransactionSheet> {
   void initState() {
     super.initState();
     _titleController = TextEditingController(text: widget.item.title);
-    _amountController = TextEditingController(text: widget.item.amount.toStringAsFixed(widget.item.amount.truncateToDouble() == widget.item.amount ? 0 : 2));
+    _amountController = TextEditingController(
+        text: widget.item.amount.toStringAsFixed(
+            widget.item.amount.truncateToDouble() == widget.item.amount
+                ? 0
+                : 2));
+    _groupNameController =
+        TextEditingController(text: widget.item.groupName ?? '');
+    _newMemberController = TextEditingController();
     _selectedType = widget.item.type;
     _selectedCategory = widget.item.category;
     _selectedPaymentMethod = widget.item.paymentMethod;
+    _memberNames = List.from(widget.item.memberNames);
 
     // Check if category exists in list, else default
     if (!_categories.any((c) => c['name'] == _selectedCategory)) {
@@ -438,13 +576,33 @@ class _EditTransactionSheetState extends State<_EditTransactionSheet> {
   void dispose() {
     _titleController.dispose();
     _amountController.dispose();
+    _groupNameController.dispose();
+    _newMemberController.dispose();
     super.dispose();
+  }
+
+  void _addMember() {
+    final name = _newMemberController.text.trim();
+    if (name.isEmpty) return;
+    if (!_memberNames.contains(name)) {
+      setState(() {
+        _memberNames.add(name);
+        _newMemberController.clear();
+      });
+    }
+  }
+
+  void _removeMember(int index) {
+    setState(() {
+      _memberNames.removeAt(index);
+    });
   }
 
   void _saveChanges() {
     final title = _titleController.text.trim();
     final amountText = _amountController.text.trim();
     final amount = double.tryParse(amountText);
+    final groupName = _groupNameController.text.trim();
 
     if (title.isEmpty || amount == null || amount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -458,7 +616,8 @@ class _EditTransactionSheetState extends State<_EditTransactionSheet> {
 
     final catObj = _categories.firstWhere(
       (c) => c['name'] == _selectedCategory,
-      orElse: () => {'name': _selectedCategory, 'icon': widget.item.categoryIcon},
+      orElse: () =>
+          {'name': _selectedCategory, 'icon': widget.item.categoryIcon},
     );
 
     final updatedTx = widget.item.copyWith(
@@ -468,6 +627,8 @@ class _EditTransactionSheetState extends State<_EditTransactionSheet> {
       categoryIcon: catObj['icon'] ?? widget.item.categoryIcon,
       paymentMethod: _selectedPaymentMethod,
       type: _selectedType,
+      groupName: groupName.isNotEmpty ? groupName : null,
+      memberNames: _memberNames,
     );
 
     context.read<BudgetBloc>().add(UpdatePersonalTransactionEvent(updatedTx));
@@ -532,7 +693,8 @@ class _EditTransactionSheetState extends State<_EditTransactionSheet> {
                   ),
                 ),
                 IconButton(
-                  icon: Icon(Icons.close_rounded, color: context.appTextMuted, size: 22),
+                  icon: Icon(Iconsax.close_circle,
+                      color: context.appTextMuted, size: 22),
                   onPressed: () => Navigator.pop(context),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
@@ -548,8 +710,10 @@ class _EditTransactionSheetState extends State<_EditTransactionSheet> {
                   child: _buildTypeButton(
                     title: 'مصروف (-)',
                     isSelected: _selectedType == TransactionType.expense,
-                    selectedColor: isDark ? const Color(0xFFF87171) : AppColors.expense,
-                    onTap: () => setState(() => _selectedType = TransactionType.expense),
+                    selectedColor:
+                        isDark ? const Color(0xFFF87171) : AppColors.expense,
+                    onTap: () =>
+                        setState(() => _selectedType = TransactionType.expense),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -557,8 +721,10 @@ class _EditTransactionSheetState extends State<_EditTransactionSheet> {
                   child: _buildTypeButton(
                     title: 'دخل (+)',
                     isSelected: _selectedType == TransactionType.income,
-                    selectedColor: isDark ? AppColors.mintContainer : AppColors.emerald,
-                    onTap: () => setState(() => _selectedType = TransactionType.income),
+                    selectedColor:
+                        isDark ? AppColors.mintContainer : AppColors.emerald,
+                    onTap: () =>
+                        setState(() => _selectedType = TransactionType.income),
                   ),
                 ),
               ],
@@ -568,7 +734,10 @@ class _EditTransactionSheetState extends State<_EditTransactionSheet> {
             // Title Field
             Text(
               AppStrings.transactionTitleLabel,
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: context.appTextSecondary),
+              style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: context.appTextSecondary),
             ),
             const SizedBox(height: 6),
             TextField(
@@ -577,14 +746,16 @@ class _EditTransactionSheetState extends State<_EditTransactionSheet> {
               decoration: InputDecoration(
                 filled: true,
                 fillColor: context.appCardBackground,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(color: context.appBorder),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.emerald, width: 1.5),
+                  borderSide:
+                      const BorderSide(color: AppColors.emerald, width: 1.5),
                 ),
               ),
             ),
@@ -593,25 +764,35 @@ class _EditTransactionSheetState extends State<_EditTransactionSheet> {
             // Amount Field
             Text(
               AppStrings.transactionAmountLabel,
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: context.appTextSecondary),
+              style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: context.appTextSecondary),
             ),
             const SizedBox(height: 6),
             TextField(
               controller: _amountController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              style: TextStyle(color: context.appTextPrimary, fontSize: 14, fontWeight: FontWeight.bold),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              style: TextStyle(
+                  color: context.appTextPrimary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold),
               decoration: InputDecoration(
                 filled: true,
                 fillColor: context.appCardBackground,
-                prefixIcon: Icon(Icons.payments_outlined, color: context.appTextSecondary, size: 20),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                prefixIcon: Icon(Iconsax.money_3,
+                    color: context.appTextSecondary, size: 20),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(color: context.appBorder),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.emerald, width: 1.5),
+                  borderSide:
+                      const BorderSide(color: AppColors.emerald, width: 1.5),
                 ),
               ),
             ),
@@ -620,7 +801,10 @@ class _EditTransactionSheetState extends State<_EditTransactionSheet> {
             // Category Selector
             Text(
               AppStrings.transactionCategory,
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: context.appTextSecondary),
+              style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: context.appTextSecondary),
             ),
             const SizedBox(height: 6),
             Container(
@@ -635,13 +819,17 @@ class _EditTransactionSheetState extends State<_EditTransactionSheet> {
                   value: _selectedCategory,
                   isExpanded: true,
                   dropdownColor: context.appCardBackground,
-                  icon: Icon(Icons.keyboard_arrow_down_rounded, color: context.appTextPrimary),
+                  icon: Icon(Iconsax.arrow_down_1,
+                      color: context.appTextPrimary),
                   items: _categories.map((cat) {
                     return DropdownMenuItem<String>(
                       value: cat['name'],
                       child: Text(
                         cat['name']!,
-                        style: TextStyle(fontSize: 13, color: context.appTextPrimary, fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                            fontSize: 13,
+                            color: context.appTextPrimary,
+                            fontWeight: FontWeight.w600),
                       ),
                     );
                   }).toList(),
@@ -658,7 +846,10 @@ class _EditTransactionSheetState extends State<_EditTransactionSheet> {
             // Payment Method Selector
             Text(
               AppStrings.paymentMethodLabel,
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: context.appTextSecondary),
+              style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: context.appTextSecondary),
             ),
             const SizedBox(height: 6),
             Container(
@@ -673,13 +864,17 @@ class _EditTransactionSheetState extends State<_EditTransactionSheet> {
                   value: _selectedPaymentMethod,
                   isExpanded: true,
                   dropdownColor: context.appCardBackground,
-                  icon: Icon(Icons.keyboard_arrow_down_rounded, color: context.appTextPrimary),
+                  icon: Icon(Iconsax.arrow_down_1,
+                      color: context.appTextPrimary),
                   items: _paymentMethods.map((method) {
                     return DropdownMenuItem<String>(
                       value: method,
                       child: Text(
                         method,
-                        style: TextStyle(fontSize: 13, color: context.appTextPrimary, fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                            fontSize: 13,
+                            color: context.appTextPrimary,
+                            fontWeight: FontWeight.w600),
                       ),
                     );
                   }).toList(),
@@ -691,6 +886,161 @@ class _EditTransactionSheetState extends State<_EditTransactionSheet> {
                 ),
               ),
             ),
+            const SizedBox(height: 14),
+
+            // Group Name Field
+            Text(
+              AppStrings.transactionGroup,
+              style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: context.appTextSecondary),
+            ),
+            const SizedBox(height: 6),
+            TextField(
+              controller: _groupNameController,
+              style: TextStyle(color: context.appTextPrimary, fontSize: 14),
+              decoration: InputDecoration(
+                hintText: 'اسم المجموعة (اختياري)',
+                hintStyle: TextStyle(color: context.appTextMuted, fontSize: 13),
+                prefixIcon: Icon(Iconsax.profile_2user,
+                    color: context.appTextSecondary, size: 20),
+                filled: true,
+                fillColor: context.appCardBackground,
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: context.appBorder),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide:
+                      const BorderSide(color: AppColors.emerald, width: 1.5),
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            // Participating Members Field & Chips
+            Text(
+              'المشاركون بالعملية',
+              style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: context.appTextSecondary),
+            ),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _newMemberController,
+                    style:
+                        TextStyle(color: context.appTextPrimary, fontSize: 13),
+                    onSubmitted: (_) => _addMember(),
+                    decoration: InputDecoration(
+                      hintText: 'أدخل اسم عضو ثم اضغط إضافة...',
+                      hintStyle:
+                          TextStyle(color: context.appTextMuted, fontSize: 12),
+                      prefixIcon: Icon(Iconsax.user_add,
+                          color: context.appTextSecondary, size: 18),
+                      filled: true,
+                      fillColor: context.appCardBackground,
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 10),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: context.appBorder),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                            color: AppColors.emerald, width: 1.5),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton(
+                  onPressed: _addMember,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: isDark
+                        ? AppColors.cardDarkElevated
+                        : context.appSurfaceVariant,
+                    foregroundColor: context.appTextPrimary,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(color: context.appBorder),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 12),
+                  ),
+                  child: const Text('إضافة',
+                      style:
+                          TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ),
+            if (_memberNames.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: _memberNames.asMap().entries.map((entry) {
+                  final idx = entry.key;
+                  final name = entry.value;
+                  return Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? AppColors.cardDarkElevated
+                          : AppColors.mintSoft,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isDark
+                            ? AppColors.emerald.withValues(alpha: 0.3)
+                            : const Color(0xFF6CF8BB),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircleAvatar(
+                          radius: 9,
+                          backgroundColor:
+                              isDark ? AppColors.emerald : AppColors.primary,
+                          child: Text(
+                            name.isNotEmpty ? name[0] : '?',
+                            style: const TextStyle(
+                                fontSize: 9,
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          name,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: context.appTextPrimary,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        GestureDetector(
+                          onTap: () => _removeMember(idx),
+                          child: Icon(Iconsax.close_circle,
+                              size: 14, color: context.appTextSecondary),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
             const SizedBox(height: 24),
 
             // Save Button
@@ -702,7 +1052,8 @@ class _EditTransactionSheetState extends State<_EditTransactionSheet> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.emerald,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
                   elevation: 0,
                 ),
                 child: const Text(

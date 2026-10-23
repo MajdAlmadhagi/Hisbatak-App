@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hisbatak_app/presentation/widgets/custom_text_form_field_card.dart';
+import 'package:iconsax_flutter/iconsax_flutter.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../../core/theme/app_theme.dart';
@@ -144,7 +145,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                             ],
                           ),
                           child: const Center(
-                            child: Icon(Icons.person,
+                            child: Icon(Iconsax.user,
                                 size: 48, color: AppColors.textSecondary),
                           ),
                         ),
@@ -157,7 +158,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                               color: AppColors.primary,
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(Icons.camera_alt,
+                            child: const Icon(Iconsax.camera,
                                 color: Colors.white, size: 14),
                           ),
                         ),
@@ -178,13 +179,13 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               CustomTextFormFieldCard(
                   controller: _nameController,
                   label: AppStrings.fullNameLabel,
-                  icon: Icons.person_outline),
+                  icon: Iconsax.user),
               const SizedBox(height: 10),
 
               CustomTextFormFieldCard(
                   controller: _phoneNumberController,
                   label: AppStrings.phoneNumberLabel,
-                  icon: Icons.phone),
+                  icon: Iconsax.call),
 
               const SizedBox(height: 14),
 
@@ -225,7 +226,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                           value: _selectedCurrency,
                           isExpanded: true,
                           icon: const Icon(
-                            Icons.keyboard_arrow_down_rounded,
+                            Iconsax.arrow_down_1,
                             color: AppColors.textSecondary,
                           ),
                           dropdownColor: Colors.white,
@@ -308,7 +309,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                                   ),
                                   if (isCurrent)
                                     const Icon(
-                                      Icons.check_circle_rounded,
+                                      Iconsax.tick_circle,
                                       color: AppColors.emerald,
                                       size: 18,
                                     ),
@@ -396,7 +397,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                         color: context.appSurfaceVariant,
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Icon(Icons.fingerprint_rounded,
+                      child: Icon(Iconsax.finger_scan,
                           color: context.appTextPrimary, size: 24),
                     ),
                     const SizedBox(width: 12),
@@ -444,7 +445,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                           style: TextStyle(
                               fontSize: 16, fontWeight: FontWeight.bold)),
                       SizedBox(width: 8),
-                      Icon(Icons.arrow_forward_rounded, size: 21),
+                      Icon(Iconsax.arrow_left_2, size: 21),
                     ],
                   ),
                 ),

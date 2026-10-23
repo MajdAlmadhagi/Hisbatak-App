@@ -1,5 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:iconsax_flutter/iconsax_flutter.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_theme.dart';
 import '../../domain/entities/budget_summary.dart';
@@ -31,7 +32,7 @@ class ExpenseDonutChart extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Icon(Icons.pie_chart_outline_rounded, size: 20, color: context.appTextPrimary),
+                  Icon(Iconsax.chart_2, size: 20, color: context.appTextPrimary),
                   const SizedBox(width: 8),
                   Text(
                     AppStrings.monthlyExpenseDistribution,
