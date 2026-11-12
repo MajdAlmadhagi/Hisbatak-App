@@ -138,7 +138,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       if (profileState is ProfileLoaded && profileState.profile.isConfigured) {
         context.go('/home');
       } else {
-        context.go('/setup-profile');
+        context.go('/login');
       }
     } catch (_) {
       if (context.mounted && Navigator.canPop(context)) {

@@ -83,22 +83,20 @@ class CustomBottomNavBar extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          // 1. Settings (Index 3)
+          // 1. Home (Index 0)
           _buildNavItem(
             context: context,
-            icon: Iconsax.setting_2,
-            label: 'الإعدادات',
-            index: 3,
+            icon: Iconsax.home_1,
+            label: 'الرئيسية',
+            index: 0,
           ),
-
-          // 2. Members / Users (Index 2 - beside Groups across Center FAB)
+          // 2. Groups (Index 1)
           _buildNavItem(
             context: context,
-            icon: Iconsax.people,
-            label: 'الأعضاء',
-            index: 2,
+            icon: Iconsax.profile_2user,
+            label: 'المجموعات',
+            index: 1,
           ),
-
           // 3. Center Add Button
           GestureDetector(
             onTap: onAddExpenseTap,
@@ -134,20 +132,20 @@ class CustomBottomNavBar extends StatelessWidget {
             ),
           ),
 
-          // 4. Groups (Index 1)
+          // 4. Members / Users (Index 2 - beside Groups across Center FAB)
           _buildNavItem(
             context: context,
-            icon: Iconsax.profile_2user,
-            label: 'المجموعات',
-            index: 1,
+            icon: Iconsax.people,
+            label: 'الأعضاء',
+            index: 2,
           ),
 
-          // 5. Home (Index 0)
+          // 5. Settings (Index 3)
           _buildNavItem(
             context: context,
-            icon: Iconsax.home_1,
-            label: 'الرئيسية',
-            index: 0,
+            icon: Iconsax.setting_2,
+            label: 'الإعدادات',
+            index: 3,
           ),
         ],
       ),

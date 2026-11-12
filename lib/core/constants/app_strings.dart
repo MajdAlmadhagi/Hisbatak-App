@@ -21,11 +21,13 @@ class AppStrings {
   static const String onboardingStart = 'ابدأ الآن';
   static const String onboardingSafeOffline = 'آمن ومحلي 100% • بدون إنترنت';
   static const String onboardingAppTour = 'جولة تعريفية بالتطبيق';
-  static const String onboardingAppTourSub = 'تعرف على ميزات حِسبَتك وتقسيم المصاريف';
+  static const String onboardingAppTourSub =
+      'تعرف على ميزات حِسبَتك وتقسيم المصاريف';
 
   // Slide 1: Budget & Personal Expenses
   static const String onboardingSlide1Tag = 'تحكم ذكي بميزانيتك';
-  static const String onboardingSlide1Title = 'إدارة المصاريف والميزانية الشخصية';
+  static const String onboardingSlide1Title =
+      'إدارة المصاريف والميزانية الشخصية';
   static const String onboardingSlide1Subtitle =
       'سجّل نفقاتك اليومية بدقة وراقب ميزانيتك عبر تقارير ورسوم بيانية ذكية فورية تساعدك على الادخار بكل سهولة.';
   static const String onboardingSlide1Feature1 = 'تصنيفات نفقات مرنة وشاملة';
@@ -37,27 +39,84 @@ class AppStrings {
   static const String onboardingSlide2Title = 'قسّم الفواتير والرحلات بإنصاف';
   static const String onboardingSlide2Subtitle =
       'احسب نصيب كل شخص تلقائياً في السكن، الرحلات، أو المناسبات، وتخلّص من الحرج والمطالبات المالية المعقدة بنقرة واحدة.';
-  static const String onboardingSlide2Feature1 = 'حساب فوري: لك وعليك في ذمة الآخرين';
+  static const String onboardingSlide2Feature1 =
+      'حساب فوري: لك وعليك في ذمة الآخرين';
   static const String onboardingSlide2Feature2 = 'تقسيم عادل، نسبي أو مخصص';
-  static const String onboardingSlide2Feature3 = 'تسوية الديون وتصفية الحسابات بسهولة';
+  static const String onboardingSlide2Feature3 =
+      'تسوية الديون وتصفية الحسابات بسهولة';
 
   // Slide 3: 100% Offline & Private
   static const String onboardingSlide3Tag = 'خصوصية وتشفير كامل';
-  static const String onboardingSlide3Title = 'يعمل بدون إنترنت • بياناتك في أمان تام';
+  static const String onboardingSlide3Title =
+      'يعمل بدون إنترنت • بياناتك في أمان تام';
   static const String onboardingSlide3Subtitle =
       'بياناتك المالية ملكك أنت وحدك! لا حاجة لإنشاء حساب أو اتصال بالإنترنت، مع تشفير محلي آمن وقفل بالبصمة وFace ID.';
-  static const String onboardingSlide3Feature1 = 'أوفلاين بالكامل بدون خوادم خارجية';
-  static const String onboardingSlide3Feature2 = 'بياناتك مشفرة ومحفوظة على جهازك';
-  static const String onboardingSlide3Feature3 = 'حماية بالبصمة والتعرف على الوجه';
+  static const String onboardingSlide3Feature1 =
+      'أوفلاين بالكامل بدون خوادم خارجية';
+  static const String onboardingSlide3Feature2 =
+      'بياناتك مشفرة ومحفوظة على جهازك';
+  static const String onboardingSlide3Feature3 =
+      'حماية بالبصمة والتعرف على الوجه';
 
   // Slide 4: Online Features & Cloud Sync
   static const String onboardingSlide4Tag = 'مزامنة ونسخ سحابي';
-  static const String onboardingSlide4Title = 'مزامنة سحابية فورية ومشاركة أونلاين';
+  static const String onboardingSlide4Title =
+      'مزامنة سحابية فورية ومشاركة أونلاين';
   static const String onboardingSlide4Subtitle =
       'استمتع بأفضل ما في العالمين! سجّل نفقاتك بحرية أوفلاين، وفور توفر الإنترنت يمكنك مزامنة فواتير المجموعات ونسخ بياناتك سحابياً بأمان تام.';
-  static const String onboardingSlide4Feature1 = 'مزامنة ذكية وتلقائية عند عودة الاتصال';
-  static const String onboardingSlide4Feature2 = 'نسخ احتياطي سحابي مشفر لحماية سجلاتك';
-  static const String onboardingSlide4Feature3 = 'تحديث فوري لأرصدة وحسابات المجموعات';
+  static const String onboardingSlide4Feature1 =
+      'مزامنة ذكية وتلقائية عند عودة الاتصال';
+  static const String onboardingSlide4Feature2 =
+      'نسخ احتياطي سحابي مشفر لحماية سجلاتك';
+  static const String onboardingSlide4Feature3 =
+      'تحديث فوري لأرصدة وحسابات المجموعات';
+
+  // Auth & Connection Modes
+  static const String welcomeBack = 'مرحباً بك مجدداً 👋';
+  static const String loginSubtitle =
+      'سجّل دخولك لمتابعة ميزانيتك ومصاريف مجموعاتك';
+  static const String createAccountTitle = 'إنشاء حساب جديد ✨';
+  static const String createAccountSubtitle =
+      'انضم إلى حِسبَتك وتحكّم بمصاريفك بذكاء وسهولة';
+  static const String connectionMode = 'طريقة العمل والاتصال';
+  static const String offlineMode = 'وضع عدم الاتصال (أوفلاين)';
+  static const String offlineModeShort = 'أوفلاين • محلي';
+  static const String offlineModeDesc =
+      'محلي 100% • مشفر على هاتفك • بدون إنترنت';
+  static const String onlineMode = 'وضع السحابة (أونلاين)';
+  static const String onlineModeShort = 'أونلاين • سحابي';
+  static const String onlineModeDesc =
+      'مزامنة فورية • نسخ سحابي • مشاركة المجموعات';
+  static const String loginWithOffline = 'المتابعة دون اتصال (حساب محلي)';
+  static const String quickOfflineAccess = 'دخول فوري بحساب محلي ⚡';
+  static const String loginOnline = 'تسجيل الدخول السحابي';
+  static const String signupOnline = 'إنشاء حساب ومتابعة';
+  static const String createLocalVault = 'إنشاء خزينة محلية أوفلاين';
+  static const String emailOrPhoneLabel = 'البريد الإلكتروني أو رقم الهاتف';
+  static const String emailOrPhoneHint = 'example@mail.com أو 770000000';
+  static const String passwordLabel = 'كلمة المرور';
+  static const String passwordHint = '••••••••';
+  static const String confirmPasswordLabel = 'تأكيد كلمة المرور';
+  static const String confirmPasswordHint = '••••••••';
+  static const String localUsernameLabel = 'اسم الحساب المحلي (اختياري)';
+  static const String localUsernameHint = 'مثال: محفظتي الشخصية';
+  static const String rememberMe = 'تذكرني على هذا الجهاز';
+  static const String forgotPassword = 'نسيت كلمة المرور؟';
+  static const String dontHaveAccount = 'ليس لديك حساب؟';
+  static const String alreadyHaveAccount = 'لديك حساب بالفعل؟';
+  static const String createNewAccount = 'إنشاء حساب جديد';
+  static const String loginNow = 'تسجيل الدخول';
+  static const String orContinueWith = 'أو المتابعة السريعة عبر';
+  static const String continueWithGoogle = 'المتابعة عبر Google';
+  static const String continueWithApple = 'المتابعة عبر Apple';
+  static const String termsAgreement =
+      'أوافق على شروط الاستخدام وسياسة الخصوصية المشفرة';
+  static const String offlineTrustBadge =
+      'بياناتك ملكك أنت وحدك! لا خوادم، لا تتبع، ولا وصول خارجي.';
+  static const String onlineSyncBadge =
+      'مزامنة مشفرة من طرف لطرف مع خوادم حِسبَتك السحابية.';
+  static const String continueOfflineAlternative =
+      'أو المتابعة مباشرة في الوضع المحلي أوفلاين';
 
   // Profile Setup Screen
   static const String stepOne = 'الخطوة الأولى للتحكم بمصاريفك';
@@ -138,7 +197,7 @@ class AppStrings {
   static const String groupTypeTrip = 'رحلة';
   static const String groupTypeOther = 'أخرى';
   static const String groupMembers = 'أعضاء المجموعة';
-  static const String addMember = 'إضافة عضو';
+  static const String addMember = 'إضافة العضو';
   static const String addMemberHint = 'أدخل اسم العضو ثم اضغط إضافة';
   static const String createGroupAction = 'حفظ وإنشاء المجموعة';
   static const String noMembersInGroup = 'لا يوجد أعضاء في هذه المجموعة بعد';
@@ -172,13 +231,17 @@ class AppStrings {
   static const String selectGroupToJoin = 'اختر مجموعة جديدة لإضافته إليها:';
   static const String confirmAddToGroup = 'تأكيد الإضافة للمجموعة';
   static const String memberAlreadyInAll = 'العضو موجود في كافة المجموعات ✓';
-  static const String memberAddedToGroupSuccess = 'تمت إضافة العضو للمجموعة بنجاح!';
+  static const String memberAddedToGroupSuccess =
+      'تمت إضافة العضو للمجموعة بنجاح!';
   static const String addNewMemberQuick = 'عضو جديد';
   static const String addNewMemberTitle = 'إضافة عضو جديد لمجموعة';
-  static const String selectGroupForNewMember = 'اختر المجموعة التي سينضم إليها:';
+  static const String selectGroupForNewMember =
+      'اختر المجموعة التي سينضم إليها:';
   static const String noMembersFoundTitle = 'لم يتم العثور على أعضاء';
-  static const String noMembersFoundDesc = 'جرب البحث باسم آخر أو أضف عضواً جديداً لأي مجموعة.';
-  static const String noGroupsAvailableForMember = 'لا توجد مجموعات أخرى لإضافة العضو إليها.';
+  static const String noMembersFoundDesc =
+      'جرب البحث باسم آخر أو أضف عضواً جديداً لأي مجموعة.';
+  static const String noGroupsAvailableForMember =
+      'لا توجد مجموعات أخرى لإضافة العضو إليها.';
 
   // Add & Split Expense Screen
   static const String addNewTransaction = 'إضافة عملية جديدة';

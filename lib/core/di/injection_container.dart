@@ -14,6 +14,11 @@ import '../../presentation/bloc/profile/profile_bloc.dart';
 import '../../presentation/bloc/budget/budget_bloc.dart';
 import '../../presentation/bloc/groups/groups_bloc.dart';
 import '../../presentation/bloc/theme/theme_cubit.dart';
+import '../../data/datasources/auth/auth_local_data_source.dart';
+import '../../data/repositories/auth_repository_impl.dart';
+import '../../domain/repositories/i_auth_repository.dart';
+import '../../domain/usecases/auth/auth_usecases.dart';
+import '../../presentation/bloc/auth/auth_bloc.dart';
 
 final sl = GetIt.instance;
 
@@ -42,6 +47,9 @@ Future<void> initDependencyInjection() async {
   sl.registerLazySingleton<IGroupLocalDataSource>(
     () => GroupLocalDataSourceImpl(sl()),
   );
+  sl.registerLazySingleton<IAuthLocalDataSource>(
+    () => AuthLocalDataSourceImpl(sl()),
+  );
 
   // 4. Repositories
   sl.registerLazySingleton<IProfileRepository>(
@@ -58,6 +66,12 @@ Future<void> initDependencyInjection() async {
   );
   sl.registerLazySingleton<IGroupRepository>(
     () => GroupRepositoryImpl(sl()),
+  );
+  sl.registerLazySingleton<IAuthRepository>(
+    () => AuthRepositoryImpl(
+      localDataSource: sl(),
+      profileRepository: sl(),
+    ),
   );
 
   // 4. Use Cases
@@ -78,8 +92,25 @@ Future<void> initDependencyInjection() async {
   sl.registerLazySingleton(() => SettleBalanceUseCase(sl()));
   sl.registerLazySingleton(() => GetConsolidatedMembersUseCase(sl()));
   sl.registerLazySingleton(() => GetAllGroupMembersUseCase(sl()));
+  sl.registerLazySingleton(() => LoginUseCase(sl()));
+  sl.registerLazySingleton(() => SignupUseCase(sl()));
+  sl.registerLazySingleton(() => GetAuthSessionUseCase(sl()));
+  sl.registerLazySingleton(() => GetPreferredModeUseCase(sl()));
+  sl.registerLazySingleton(() => SetPreferredModeUseCase(sl()));
+  sl.registerLazySingleton(() => LogoutUseCase(sl()));
 
   // 5. Presentation BLoCs & Cubits
+  sl.registerFactory(
+    () => AuthBloc(
+      loginUseCase: sl(),
+      signupUseCase: sl(),
+      getAuthSessionUseCase: sl(),
+      getPreferredModeUseCase: sl(),
+      setPreferredModeUseCase: sl(),
+      logoutUseCase: sl(),
+    ),
+  );
+
   sl.registerFactory(
     () => ProfileBloc(
       getProfileUseCase: sl(),
@@ -111,7 +142,6 @@ Future<void> initDependencyInjection() async {
       getConsolidatedMembersUseCase: sl(),
     ),
   );
-
 
   sl.registerFactory(
     () => ThemeCubit(profileRepository: sl()),

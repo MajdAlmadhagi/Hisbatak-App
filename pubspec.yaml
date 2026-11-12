@@ -35,6 +35,8 @@ dependencies:
   intl: ^0.20.2
   fl_chart: ^0.70.2
   iconsax_flutter: ^1.0.1
+  animated_theme_switcher: ^2.0.10
+
 
 dev_dependencies:
   flutter_test:

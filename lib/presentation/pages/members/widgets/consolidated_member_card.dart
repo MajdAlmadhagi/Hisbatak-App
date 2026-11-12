@@ -166,48 +166,57 @@ class ConsolidatedMemberCard extends StatelessWidget {
               ),
 
               // Balance Status Badge
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: badgeBg,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: owesUser
-                        ? (isDark
-                            ? AppColors.emerald.withValues(alpha: 0.4)
-                            : AppColors.income.withValues(alpha: 0.2))
-                        : (userOwes
+              Column(
+                children: [
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: badgeBg,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: owesUser
                             ? (isDark
-                                ? AppColors.expense.withValues(alpha: 0.4)
-                                : AppColors.expense.withValues(alpha: 0.2))
-                            : context.appBorder),
+                                ? AppColors.emerald.withValues(alpha: 0.4)
+                                : AppColors.income.withValues(alpha: 0.2))
+                            : (userOwes
+                                ? (isDark
+                                    ? AppColors.expense.withValues(alpha: 0.4)
+                                    : AppColors.expense.withValues(alpha: 0.2))
+                                : context.appBorder),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Text(
+                          isBalanced
+                              ? '0 ر.س'
+                              : Formatters.formatSignedCurrency(
+                                  member.totalBalance),
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: badgeText,
+                          ),
+                        ),
+                        Text(
+                          badgeLabel,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: badgeText.withValues(alpha: 0.85),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(
-                      isBalanced
-                          ? '0 ر.س'
-                          : Formatters.formatSignedCurrency(
-                              member.totalBalance),
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                        color: badgeText,
-                      ),
-                    ),
-                    Text(
-                      badgeLabel,
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: badgeText.withValues(alpha: 0.85),
-                      ),
-                    ),
-                  ],
-                ),
+                  const SizedBox(
+                    height: 20,
+                  ),
+                  Text('مزامنة المستخدم',
+                      style: TextStyle(fontWeight: FontWeight.bold))
+                ],
               ),
             ],
           ),

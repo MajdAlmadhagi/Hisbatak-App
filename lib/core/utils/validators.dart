@@ -17,6 +17,13 @@ class Validators {
     return null;
   }
 
+  static String? validatMatching(String? value1, String? value2) {
+    if (value1 != value2) {
+      return 'كلمتا المرور غير متطابقتين';
+    }
+    return null;
+  }
+
   static String? requiredField(String? value) {
     if (value == null || value.trim().isEmpty) {
       return 'هذا الحقل مطلوب';

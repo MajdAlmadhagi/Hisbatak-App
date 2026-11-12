@@ -56,7 +56,8 @@ class _SplashScreenState extends State<SplashScreen>
     if (!mounted) return;
 
     // First time install check: if onboarding hasn't been completed, route to OnboardingScreen
-    final hasSeenOnboarding = await di.sl<IProfileRepository>().hasSeenOnboarding();
+    final hasSeenOnboarding =
+        await di.sl<IProfileRepository>().hasSeenOnboarding();
     if (!mounted) return;
     if (!hasSeenOnboarding) {
       context.go('/onboarding');
@@ -64,9 +65,9 @@ class _SplashScreenState extends State<SplashScreen>
     }
 
     if (state is ProfileLoaded && state.profile.isConfigured) {
-      context.go('/home');
+      context.go('/login');
     } else {
-      context.go('/setup-profile');
+      context.go('/login');
     }
   }
 

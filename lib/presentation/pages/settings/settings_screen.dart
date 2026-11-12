@@ -1,3 +1,4 @@
+import 'package:animated_theme_switcher/animated_theme_switcher.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -270,16 +271,27 @@ class SettingsScreen extends StatelessWidget {
               BlocBuilder<ThemeCubit, ThemeMode>(
                 builder: (context, themeMode) {
                   final isDarkActive = themeMode == ThemeMode.dark;
-                  return SettingsItemTile(
-                    icon: Iconsax.moon,
-                    title: AppStrings.darkMode,
-                    subtitle: AppStrings.darkModeSub,
-                    trailing: Switch(
-                      value: isDarkActive,
-                      activeTrackColor: AppColors.emerald,
-                      onChanged: (val) =>
-                          context.read<ThemeCubit>().setDarkMode(val),
-                    ),
+                  return ThemeSwitcher(
+                    clipper: const ThemeSwitcherCircleClipper(),
+                    builder: (switcherContext) {
+                      return SettingsItemTile(
+                        icon: Iconsax.moon,
+                        title: AppStrings.darkMode,
+                        subtitle: AppStrings.darkModeSub,
+                        trailing: Switch(
+                          value: isDarkActive,
+                          activeTrackColor: AppColors.emerald,
+                          onChanged: (val) {
+                            final nextTheme =
+                                val ? AppTheme.darkTheme : AppTheme.lightTheme;
+                            ThemeSwitcher.of(switcherContext).changeTheme(
+                              theme: nextTheme,
+                            );
+                            context.read<ThemeCubit>().setDarkMode(val);
+                          },
+                        ),
+                      );
+                    },
                   );
                 },
               ),
@@ -418,29 +430,29 @@ class SettingsScreen extends StatelessWidget {
               ),
 
               // Backup Local Data
-              SettingsItemTile(
-                icon: Iconsax.mobile,
-                title: AppStrings.createBackup,
-                subtitle: AppStrings.lastBackupToday,
-                trailing: const Icon(Iconsax.cloud_connection,
-                    color: AppColors.emerald, size: 20),
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text('تم إنشاء نسخة احتياطية محلية مشفرة.')),
-                  );
-                },
-              ),
+              // SettingsItemTile(
+              //   icon: Iconsax.mobile,
+              //   title: AppStrings.createBackup,
+              //   subtitle: AppStrings.lastBackupToday,
+              //   trailing: const Icon(Iconsax.cloud_connection,
+              //       color: AppColors.emerald, size: 20),
+              //   onTap: () {
+              //     ScaffoldMessenger.of(context).showSnackBar(
+              //       const SnackBar(
+              //           content: Text('تم إنشاء نسخة احتياطية محلية مشفرة.')),
+              //     );
+              //   },
+              // ),
 
               // Restore Backup
-              SettingsItemTile(
-                icon: Iconsax.refresh_2,
-                title: AppStrings.restoreBackup,
-                subtitle: AppStrings.restoreBackupSub,
-                trailing: Icon(Iconsax.document_upload,
-                    color: context.appTextSecondary, size: 20),
-                onTap: () {},
-              ),
+              // SettingsItemTile(
+              //   icon: Iconsax.refresh_2,
+              //   title: AppStrings.restoreBackup,
+              //   subtitle: AppStrings.restoreBackupSub,
+              //   trailing: Icon(Iconsax.document_upload,
+              //       color: context.appTextSecondary, size: 20),
+              //   onTap: () {},
+              // ),
 
               // Wipe Data (Destructive)
               SettingsItemTile(

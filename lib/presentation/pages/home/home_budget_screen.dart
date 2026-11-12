@@ -1,7 +1,9 @@
+import 'package:animated_theme_switcher/animated_theme_switcher.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hisbatak_app/core/utils/app_helpers.dart';
+import 'package:hisbatak_app/presentation/bloc/theme/theme_cubit.dart';
 import 'package:hisbatak_app/presentation/widgets/custom_app_button.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 import '../../../core/constants/app_colors.dart';
@@ -10,7 +12,6 @@ import '../../../core/theme/app_theme.dart';
 import '../../bloc/budget/budget_bloc.dart';
 import '../../bloc/profile/profile_bloc.dart';
 import '../../widgets/budget_card.dart';
-import '../../widgets/expense_donut_chart.dart';
 import '../../widgets/hisbatak_loader.dart';
 import '../../widgets/offline_status_pill.dart';
 import '../../widgets/transaction_details_dialog.dart';
@@ -151,6 +152,35 @@ class HomeBudgetScreen extends StatelessWidget {
                       icon: Iconsax.notification,
                       onPressed: () {},
 //text: '',
+                    ),
+
+                    const SizedBox(width: 8),
+
+                    BlocBuilder<ThemeCubit, ThemeMode>(
+                      builder: (context, themeModeState) {
+                        final isDarkActive = themeModeState == ThemeMode.dark;
+
+                        return ThemeSwitcher(
+                          // clipper: const ThemeSwitcherCircleClipper(),
+                          builder: (switcherContext) {
+                            return CustomAppButton(
+                              icon: isDarkActive ? Iconsax.sun_1 : Iconsax.moon,
+                              onPressed: () {
+                                final nextTheme = isDarkActive
+                                    ? AppTheme.lightTheme
+                                    : AppTheme.darkTheme;
+
+                                ThemeSwitcher.of(switcherContext).changeTheme(
+                                    theme: nextTheme, isReversed: isDarkActive);
+
+                                context
+                                    .read<ThemeCubit>()
+                                    .setDarkMode(!isDarkActive);
+                              },
+                            );
+                          },
+                        );
+                      },
                     ),
                   ],
                 );
