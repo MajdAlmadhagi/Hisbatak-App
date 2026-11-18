@@ -9,6 +9,7 @@ class UserProfileModel extends UserProfile {
     required super.id,
     required super.fullName,
     required super.email,
+    super.phoneE164,
     required super.currencyCode,
     required super.currencySymbol,
     required super.monthlyBudgetLimit,
@@ -23,6 +24,7 @@ class UserProfileModel extends UserProfile {
       id: map['id'] as String,
       fullName: map['full_name'] as String,
       email: map['email'] as String,
+      phoneE164: map['phone_e164'] as String?,
       currencyCode: map['currency_code'] as String,
       currencySymbol: map['currency_symbol'] as String,
       monthlyBudgetLimit: (map['monthly_budget_limit'] as num).toDouble(),
@@ -38,6 +40,7 @@ class UserProfileModel extends UserProfile {
       'id': id,
       'full_name': fullName,
       'email': email,
+      'phone_e164': phoneE164,
       'currency_code': currencyCode,
       'currency_symbol': currencySymbol,
       'monthly_budget_limit': monthlyBudgetLimit,
@@ -151,13 +154,11 @@ class GroupModel extends GroupEntity {
       name: map['name'] as String,
       type: map['type'] as String,
       iconName: map['icon_name'] as String,
-      // Computed by the query that reads groups, not stored.
       memberCount: map['member_count'] as int,
       createdAt: DateTime.parse(map['created_at'] as String).toLocal(),
     );
   }
 
-  /// The stored columns; memberCount is computed from group_members.
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -176,6 +177,8 @@ class GroupMemberModel extends GroupMemberEntity {
     required super.groupId,
     required super.name,
     super.avatarUrl,
+    super.phoneE164,
+    super.linkedUserId,
     required super.balance,
     super.note,
     super.lastActivity,
@@ -187,20 +190,22 @@ class GroupMemberModel extends GroupMemberEntity {
       groupId: map['group_id'] as String,
       name: map['name'] as String,
       avatarUrl: map['avatar_url'] as String?,
-      // Computed from expense_splits and settlements by the query that reads members.
+      phoneE164: map['phone_e164'] as String?,
+      linkedUserId: map['linked_user_id'] as String?,
       balance: (map['balance'] as num).toDouble(),
       note: map['note'] as String?,
       lastActivity: map['last_activity'] as String?,
     );
   }
 
-  /// The stored columns; balance is computed.
   Map<String, dynamic> toMap() {
     return {
       'id': id,
       'group_id': groupId,
       'name': name,
       'avatar_url': avatarUrl,
+      'phone_e164': phoneE164,
+      'linked_user_id': linkedUserId,
       'note': note,
       'last_activity': lastActivity,
     };
@@ -217,6 +222,8 @@ class GroupMemberWithGroupModel extends GroupMemberWithGroupEntity {
     required super.groupIcon,
     required super.name,
     super.avatarUrl,
+    super.phoneE164,
+    super.linkedUserId,
     required super.balance,
     super.note,
     super.lastActivity,
@@ -231,10 +238,11 @@ class GroupMemberWithGroupModel extends GroupMemberWithGroupEntity {
       groupIcon: (map['group_icon'] as String?) ?? 'profile_2user',
       name: map['name'] as String,
       avatarUrl: map['avatar_url'] as String?,
+      phoneE164: map['phone_e164'] as String?,
+      linkedUserId: map['linked_user_id'] as String?,
       balance: (map['balance'] as num?)?.toDouble() ?? 0.0,
       note: map['note'] as String?,
       lastActivity: map['last_activity'] as String?,
     );
   }
 }
-

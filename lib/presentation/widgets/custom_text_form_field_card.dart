@@ -5,12 +5,16 @@ class CustomTextFormFieldCard extends StatelessWidget {
   final String label;
   final TextEditingController controller;
   final IconData icon;
+  final TextInputType? keyboardType;
+  final TextDirection? textDirection;
 
   const CustomTextFormFieldCard({
     super.key,
     required this.label,
     required this.controller,
     required this.icon,
+    this.keyboardType,
+    this.textDirection,
   });
 
   @override
@@ -37,6 +41,8 @@ class CustomTextFormFieldCard extends StatelessWidget {
           const SizedBox(height: 8),
           TextField(
             controller: controller,
+            keyboardType: keyboardType,
+            textDirection: textDirection,
             style: TextStyle(
               fontWeight: FontWeight.bold,
               color: context.appTextPrimary,

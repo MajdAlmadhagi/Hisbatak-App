@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../core/utils/id_generator.dart';
 import '../../../domain/entities/auth_session.dart';
 
 abstract class IAuthLocalDataSource {
@@ -26,7 +27,10 @@ class AuthLocalDataSourceImpl implements IAuthLocalDataSource {
       final map = jsonDecode(raw) as Map<String, dynamic>;
       final modeStr = map['connectionMode'] as String? ?? 'offline';
       return AuthSession(
-        userId: map['userId'] as String? ?? 'user_me',
+        userId: (map['userId'] as String?)?.isNotEmpty == true &&
+                map['userId'] != 'user_me'
+            ? map['userId'] as String
+            : IdGenerator.uuidV4(),
         name: map['name'] as String? ?? 'مستخدم حسبتك',
         email: map['email'] as String? ?? '',
         connectionMode: modeStr == 'online'

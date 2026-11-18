@@ -5,6 +5,10 @@ import 'package:iconsax_flutter/iconsax_flutter.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/report_exporter.dart';
+import '../../widgets/profile_currency_extension.dart';
+import '../../widgets/report_export_sheet.dart';
+import '../../bloc/budget/budget_bloc.dart';
 import '../../bloc/groups/groups_bloc.dart';
 import '../add_expense/add_expense_bottom_sheet.dart';
 import '../../widgets/debt_summary_card.dart';
@@ -119,7 +123,7 @@ class GroupsScreen extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        state.selectedGroup?.name ?? AppStrings.groupWork,
+                        state.selectedGroup?.name ?? 'لا توجد مجموعة نشطة',
                         style: TextStyle(
                             fontWeight: FontWeight.w800,
                             fontSize: 11,
@@ -133,7 +137,27 @@ class GroupsScreen extends StatelessWidget {
                 children: [
                   CustomAppButton(
                     icon: Iconsax.document_download,
-                    onPressed: () {},
+                    onPressed: () {
+                      final activeCurrency = context.readCurrencySymbol();
+                      final csv = ReportExporter.buildGroupsSummaryCsv(
+                        groups: state.groups,
+                        members: state.allMembers,
+                        summary: state.debtSummary,
+                        currencySymbol: activeCurrency,
+                      );
+                      ReportExportSheet.show(
+                        context,
+                        title: 'تقرير المجموعات والتسويات',
+                        subtitle:
+                            '${state.groups.length} مجموعات • ${state.allMembers.length} أعضاء',
+                        formats: [
+                          ReportExportFormatOption(
+                            label: 'CSV (Excel)',
+                            content: csv,
+                          ),
+                        ],
+                      );
+                    },
                   )
                 ],
               ),
@@ -280,7 +304,9 @@ class GroupsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '${state.activeMembers.length} أعضاء في ${state.selectedGroup?.name ?? ''}',
+                    state.selectedGroup != null
+                        ? '${state.activeMembers.length} أعضاء في ${state.selectedGroup!.name}'
+                        : 'لا توجد مجموعة محددة حالياً',
                     style: TextStyle(
                         fontSize: 11,
                         color: isDark
@@ -359,7 +385,9 @@ class GroupsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    AppStrings.noMembersInGroup,
+                    state.selectedGroup != null
+                        ? AppStrings.noMembersInGroup
+                        : 'لا توجد مجموعات نشطة بعد',
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
@@ -368,15 +396,17 @@ class GroupsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    AppStrings.noMembersInGroupDesc,
+                    state.selectedGroup != null
+                        ? AppStrings.noMembersInGroupDesc
+                        : 'أنشئ مجموعتك الأولى لتبدأ بإضافة الأعضاء وتقسيم المصاريف المشتركة.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 11,
                       color: context.appTextSecondary,
                     ),
                   ),
-                  if (state.selectedGroup != null) ...[
-                    const SizedBox(height: 14),
+                  const SizedBox(height: 14),
+                  if (state.selectedGroup != null)
                     ElevatedButton.icon(
                       onPressed: () => _showAddMemberModal(
                         context,
@@ -395,8 +425,23 @@ class GroupsScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
+                    )
+                  else
+                    ElevatedButton.icon(
+                      onPressed: () => _showCreateGroupModal(context),
+                      icon: const Icon(Iconsax.add, size: 16),
+                      label: const Text(AppStrings.newGroup),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            isDark ? AppColors.emerald : AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
                     ),
-                  ],
                 ],
               ),
             )
@@ -409,6 +454,9 @@ class GroupsScreen extends StatelessWidget {
                         SettleMemberEvent(
                             memberId: member.id, groupId: member.groupId),
                       );
+                  try {
+                    context.read<BudgetBloc>().add(LoadBudgetDashboardEvent());
+                  } catch (_) {}
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('تمت تسوية حساب ${member.name} بنجاح!'),

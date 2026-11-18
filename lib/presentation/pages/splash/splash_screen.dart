@@ -5,6 +5,8 @@ import 'package:iconsax_flutter/iconsax_flutter.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../../core/di/injection_container.dart' as di;
+import '../../../core/security/app_lock_service.dart';
+import '../../../domain/repositories/i_auth_repository.dart';
 import '../../../domain/repositories/i_profile_repository.dart';
 import '../../bloc/profile/profile_bloc.dart';
 import '../../widgets/hisbatak_loader.dart';
@@ -30,7 +32,7 @@ class _SplashScreenState extends State<SplashScreen>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2500),
+      duration: const Duration(milliseconds: 850),
     );
     _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
     _scaleAnimation = Tween<double>(begin: 0.85, end: 1.0).animate(
@@ -42,7 +44,7 @@ class _SplashScreenState extends State<SplashScreen>
 
   /// Shortest time the splash stays up, so it reads as a deliberate screen
   /// rather than a flash: about when the loader finishes drawing the "ح".
-  static const _minimumDisplay = Duration(milliseconds: 5000);
+  static const _minimumDisplay = Duration(milliseconds: 900);
 
   /// Upper bound if the local database never answers.
   static const _maximumWait = Duration(seconds: 10);
@@ -55,7 +57,7 @@ class _SplashScreenState extends State<SplashScreen>
     final state = await profileState;
     if (!mounted) return;
 
-    // First time install check: if onboarding hasn't been completed, route to OnboardingScreen
+    // First time install check: route new users through streamlined onboarding.
     final hasSeenOnboarding =
         await di.sl<IProfileRepository>().hasSeenOnboarding();
     if (!mounted) return;
@@ -64,8 +66,24 @@ class _SplashScreenState extends State<SplashScreen>
       return;
     }
 
+    // If local PIN App Lock is enabled, gate wallet access cleanly on device.
+    if (di.sl.isRegistered<IAppLockService>() &&
+        di.sl<IAppLockService>().isLockEnabled()) {
+      context.go('/lock');
+      return;
+    }
+
     if (state is ProfileLoaded && state.profile.isConfigured) {
-      context.go('/login');
+      context.go('/home');
+      return;
+    }
+
+    final session = di.sl.isRegistered<IAuthRepository>()
+        ? await di.sl<IAuthRepository>().getCurrentSession()
+        : null;
+    if (!mounted) return;
+    if (session != null) {
+      context.go('/setup-profile');
     } else {
       context.go('/login');
     }

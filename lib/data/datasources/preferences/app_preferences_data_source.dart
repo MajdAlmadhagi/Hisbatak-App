@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/constants/app_keys.dart';
 
 /// [IAppPreferencesDataSource] defines the contract for storing lightweight,
-/// device-specific preferences like theme mode, biometric lock, and onboarding state.
+/// device-specific preferences like theme mode, lock/alerts, and onboarding state.
 ///
 /// SOLID Principles:
 /// - Interface Segregation Principle (ISP): Separate preferences from SQLite database operations.
@@ -17,6 +17,9 @@ abstract class IAppPreferencesDataSource {
 
   Future<bool> isBiometricEnabled();
   Future<void> setBiometricEnabled(bool enabled);
+
+  Future<bool> isBudgetAlertsEnabled();
+  Future<void> setBudgetAlertsEnabled(bool enabled);
 
   Future<void> clearAllPreferences();
 }
@@ -39,7 +42,10 @@ class AppPreferencesDataSourceImpl implements IAppPreferencesDataSource {
 
   @override
   Future<bool> isDarkMode() async {
-    final isDark = sharedPreferences.getBool(AppKeys.isDarkMode) ?? false;
+    final stored = sharedPreferences.getBool(AppKeys.isDarkMode);
+    final isDark = stored ??
+        (WidgetsBinding.instance.platformDispatcher.platformBrightness ==
+            Brightness.dark);
     final appMode = isDark ? "Dark Mode" : "Light Mode";
     debugPrint('*********** Get AppTheme is currently: $appMode ************');
     return isDark;
@@ -55,12 +61,22 @@ class AppPreferencesDataSourceImpl implements IAppPreferencesDataSource {
 
   @override
   Future<bool> isBiometricEnabled() async {
-    return sharedPreferences.getBool(AppKeys.biometricEnabled) ?? true;
+    return sharedPreferences.getBool(AppKeys.biometricEnabled) ?? false;
   }
 
   @override
   Future<void> setBiometricEnabled(bool enabled) async {
     await sharedPreferences.setBool(AppKeys.biometricEnabled, enabled);
+  }
+
+  @override
+  Future<bool> isBudgetAlertsEnabled() async {
+    return sharedPreferences.getBool(AppKeys.budgetAlertsEnabled) ?? true;
+  }
+
+  @override
+  Future<void> setBudgetAlertsEnabled(bool enabled) async {
+    await sharedPreferences.setBool(AppKeys.budgetAlertsEnabled, enabled);
   }
 
   @override

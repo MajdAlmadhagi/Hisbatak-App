@@ -28,7 +28,7 @@ class CustomBottomNavBar extends StatelessWidget {
     final isSelected = currentIndex == index;
     final activeColor = isDark ? AppColors.mintContainer : AppColors.primary;
     final inactiveColor = context.appTextMuted;
-    final activeAroundColor = AppColors.mintContainer;
+
 
     return InkWell(
       onTap: () => onTap(index),

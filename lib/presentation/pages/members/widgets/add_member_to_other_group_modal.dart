@@ -69,6 +69,8 @@ class _AddMemberToOtherGroupModalState
           AddExistingMemberToGroupEvent(
             memberName: widget.member.name,
             avatarUrl: widget.member.avatarUrl,
+            phoneE164: widget.member.phoneE164,
+            linkedUserId: widget.member.linkedUserId,
             targetGroupId: _selectedGroupId!,
             note: _noteController.text.trim().isNotEmpty
                 ? _noteController.text.trim()

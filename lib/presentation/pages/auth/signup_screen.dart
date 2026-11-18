@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:hisbatak_app/core/utils/validators.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_strings.dart';
@@ -10,16 +9,14 @@ import '../../../domain/entities/auth_session.dart';
 import '../../bloc/auth/auth_bloc.dart';
 import '../../bloc/auth/auth_event.dart';
 import '../../bloc/auth/auth_state.dart';
-import '../../bloc/theme/theme_cubit.dart';
+import '../../bloc/profile/profile_bloc.dart';
 import '../../widgets/hisbatak_mark.dart';
 import 'widgets/auth_text_field.dart';
+import 'widgets/phone_otp_auth_section.dart';
 
-/// [SignupScreen] provides an elegant, modern registration flow supporting
-/// both local-first offline accounts and cloud-synced accounts.
-///
-/// SOLID Principles:
-/// - Single Responsibility Principle (SRP): Handles user registration inputs and validation.
-/// - Dependency Inversion Principle (DIP): Dispatches events to AuthBloc.
+/// [SignupScreen] streamlines workspace creation without dummy password clutter:
+/// - Offline: Name only -> instant local wallet
+/// - Online: Name + Phone OTP verification
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
 
@@ -30,61 +27,43 @@ class SignupScreen extends StatefulWidget {
 class _SignupScreenState extends State<SignupScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _otpController = TextEditingController();
 
-  bool _agreedToTerms = true;
   AuthConnectionMode _signupMode = AuthConnectionMode.offline;
 
   @override
   void dispose() {
     _nameController.dispose();
-    _emailController.dispose();
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
+    _phoneController.dispose();
+    _otpController.dispose();
     super.dispose();
   }
 
-  void _onSignupSubmitted(BuildContext context) {
-    if (!_formKey.currentState!.validate()) return;
-    if (!_agreedToTerms) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content:
-              const Text('يرجى الموافقة على شروط الاستخدام وسياسة الخصوصية'),
-          backgroundColor: AppColors.expense,
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        ),
-      );
-      return;
-    }
-
-    // Update bloc connection mode to match chosen signup mode
-    context.read<AuthBloc>().add(SwitchConnectionModeEvent(_signupMode));
-
+  void _onLocalCreate(BuildContext context) {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
     context.read<AuthBloc>().add(
-          SignupSubmittedEvent(
-            name: _nameController.text.trim(),
-            email: _emailController.text.trim(),
-            password: _passwordController.text.trim(),
-          ),
+          QuickOfflineAccessEvent(localName: _nameController.text.trim()),
         );
   }
 
-  void _onQuickLocalSignup(BuildContext context) {
+  void _onSendOtp(BuildContext context) {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
     context.read<AuthBloc>().add(
-          const SwitchConnectionModeEvent(AuthConnectionMode.offline),
+          const SwitchConnectionModeEvent(AuthConnectionMode.online),
         );
     context.read<AuthBloc>().add(
-          SignupSubmittedEvent(
-            name: _nameController.text.trim().isNotEmpty
-                ? _nameController.text.trim()
-                : 'مستخدم محلي',
-            email: _emailController.text.trim(),
-            password: '',
+          RequestPhoneOtpEvent(phoneNumber: _phoneController.text.trim()),
+        );
+  }
+
+  void _onVerifyOtp(BuildContext context, AuthState state) {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    context.read<AuthBloc>().add(
+          VerifyPhoneOtpEvent(
+            phoneNumber: _phoneController.text.trim(),
+            code: _otpController.text.trim(),
+            challengeId: state.otpChallengeId,
           ),
         );
   }
@@ -100,8 +79,7 @@ class _SignupScreenState extends State<SignupScreen> {
             SnackBar(
               content: Row(
                 children: [
-                  const Icon(Iconsax.info_circle,
-                      color: Colors.white, size: 18),
+                  const Icon(Iconsax.info_circle, color: Colors.white, size: 18),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -114,7 +92,18 @@ class _SignupScreenState extends State<SignupScreen> {
               backgroundColor: AppColors.expense,
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+        }
+
+        if (state.status == AuthStatus.otpSent && state.successMessage != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.successMessage!),
+              backgroundColor: AppColors.emerald,
+              behavior: SnackBarBehavior.floating,
             ),
           );
         }
@@ -125,8 +114,7 @@ class _SignupScreenState extends State<SignupScreen> {
               SnackBar(
                 content: Row(
                   children: [
-                    const Icon(Iconsax.tick_circle,
-                        color: Colors.white, size: 18),
+                    const Icon(Iconsax.tick_circle, color: Colors.white, size: 18),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -140,16 +128,18 @@ class _SignupScreenState extends State<SignupScreen> {
                 behavior: SnackBarBehavior.floating,
                 duration: const Duration(milliseconds: 1400),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             );
           }
-          // After successful signup, proceed to profile setup!
+          context.read<ProfileBloc>().add(LoadProfileEvent());
           context.go('/setup-profile');
         }
       },
       builder: (context, state) {
         final isLoading = state.isLoading;
+        final isOffline = _signupMode == AuthConnectionMode.offline;
 
         return Scaffold(
           backgroundColor: context.appBackground,
@@ -162,25 +152,19 @@ class _SignupScreenState extends State<SignupScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Top Navigation Bar
                     _buildTopBar(context, isDark),
                     const SizedBox(height: 20),
-
-                    // Header
                     _buildHeader(context),
                     const SizedBox(height: 20),
-
-                    // Mode Selection Banner
                     _buildModeSelector(context, isDark),
                     const SizedBox(height: 20),
-
-                    // Input Fields
                     AuthTextField(
                       label: AppStrings.fullNameLabel,
                       hintText: 'مثال: طارق منصور',
                       controller: _nameController,
                       prefixIcon: Iconsax.user,
-                      textInputAction: TextInputAction.next,
+                      textInputAction:
+                          isOffline ? TextInputAction.done : TextInputAction.next,
                       validator: (val) {
                         if (val == null || val.trim().isEmpty) {
                           return 'يرجى إدخال اسمك الكريم';
@@ -188,159 +172,59 @@ class _SignupScreenState extends State<SignupScreen> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 14),
-
-                    AuthTextField(
-                      label: AppStrings.emailOrPhoneLabel,
-                      hintText: AppStrings.emailOrPhoneHint,
-                      controller: _emailController,
-                      prefixIcon: Iconsax.sms,
-                      keyboardType: TextInputType.emailAddress,
-                      textInputAction: TextInputAction.next,
-                      validator: (val) {
-                        if (val == null || val.trim().isEmpty) {
-                          return 'يرجى إدخال البريد الإلكتروني أو رقم الهاتف';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 14),
-
-                    AuthTextField(
-                      label: AppStrings.passwordLabel,
-                      hintText: AppStrings.passwordHint,
-                      controller: _passwordController,
-                      prefixIcon: Iconsax.lock,
-                      isPassword: true,
-                      textInputAction: TextInputAction.next,
-                      validator: (val) => Validators.validatePassword(val),
-                    ),
-                    const SizedBox(height: 14),
-
-                    AuthTextField(
-                      label: AppStrings.confirmPasswordLabel,
-                      hintText: AppStrings.confirmPasswordHint,
-                      controller: _confirmPasswordController,
-                      prefixIcon: Iconsax.lock_1,
-                      isPassword: true,
-                      textInputAction: TextInputAction.done,
-                      validator: (val) => Validators.validatMatching(
-                          val, _passwordController.text),
-                    ),
                     const SizedBox(height: 16),
-
-                    // Terms and Conditions Checkbox
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: Checkbox(
-                            value: _agreedToTerms,
-                            activeColor: AppColors.emerald,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            onChanged: (val) {
-                              setState(() => _agreedToTerms = val ?? false);
-                            },
+                    if (isOffline)
+                      ElevatedButton.icon(
+                        onPressed: isLoading ? null : () => _onLocalCreate(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.emerald,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
                           ),
+                          elevation: 0,
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            AppStrings.termsAgreement,
-                            style: TextStyle(
-                              fontSize: 12,
-                              height: 1.35,
-                              color: context.appTextSecondary,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Submit Button
-                    ElevatedButton(
-                      onPressed:
-                          isLoading ? null : () => _onSignupSubmitted(context),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: isLoading
-                          ? const SizedBox(
-                              width: 22,
-                              height: 22,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
-                              ),
-                            )
-                          : Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Iconsax.user_add,
-                                    size: 20, color: Colors.white),
-                                const SizedBox(width: 8),
-                                Text(
-                                  AppStrings.signupOnline,
-                                  style: const TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                        icon: isLoading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
                                 ),
-                              ],
-                            ),
-                    ),
-                    const SizedBox(height: 14),
-
-                    // Quick Local Vault Setup Alternative Button
-                    OutlinedButton(
-                      onPressed:
-                          isLoading ? null : () => _onQuickLocalSignup(context),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor:
-                            isDark ? AppColors.brandGreen : AppColors.emerald,
-                        side: BorderSide(
-                          color:
-                              isDark ? AppColors.brandGreen : AppColors.emerald,
-                          width: 1.2,
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Iconsax.shield_tick, size: 18),
-                          SizedBox(width: 8),
-                          Flexible(
-                            child: Text(
-                              AppStrings.continueOfflineAlternative,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                              )
+                            : const Icon(Iconsax.shield_tick, size: 20),
+                        label: const Text(
+                          'إنشاء محفظة محلية فورية',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
                           ),
-                        ],
+                        ),
+                      )
+                    else
+                      PhoneOtpAuthSection(
+                        phoneController: _phoneController,
+                        otpController: _otpController,
+                        authState: state,
+                        onSendOtp: () => _onSendOtp(context),
+                        onVerifyOtp: () => _onVerifyOtp(context, state),
+                        verifyButtonLabel: 'تأكيد وإنشاء الحساب السحابي',
+                      ),
+                    const SizedBox(height: 16),
+                    Center(
+                      child: Text(
+                        AppStrings.termsAgreement,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 11,
+                          height: 1.4,
+                          color: context.appTextMuted,
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 24),
-
-                    // Navigation to Login
+                    const SizedBox(height: 22),
                     _buildLoginPrompt(context),
                     const SizedBox(height: 12),
                   ],
@@ -357,7 +241,6 @@ class _SignupScreenState extends State<SignupScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        // Back Button
         Material(
           color: Colors.transparent,
           child: InkWell(
@@ -380,8 +263,6 @@ class _SignupScreenState extends State<SignupScreen> {
             ),
           ),
         ),
-
-        // Brand Logo
         Row(
           children: [
             Container(
@@ -405,41 +286,7 @@ class _SignupScreenState extends State<SignupScreen> {
             ),
           ],
         ),
-
-        // Theme Switcher
-        BlocBuilder<ThemeCubit, ThemeMode>(
-          builder: (context, themeMode) {
-            final isDarkModeActive = themeMode == ThemeMode.dark ||
-                (themeMode == ThemeMode.system &&
-                    MediaQuery.of(context).platformBrightness ==
-                        Brightness.dark);
-
-            return Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () => context.read<ThemeCubit>().toggleTheme(),
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: isDark ? AppColors.cardDarkElevated : Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: isDark ? AppColors.borderDark : AppColors.border,
-                    ),
-                  ),
-                  child: Icon(
-                    isDarkModeActive ? Iconsax.sun_1 : Iconsax.moon,
-                    size: 18,
-                    color: isDarkModeActive
-                        ? const Color(0xFFFBBF24)
-                        : AppColors.primary,
-                  ),
-                ),
-              ),
-            );
-          },
-        ),
+        const SizedBox(width: 38),
       ],
     );
   }
@@ -459,7 +306,7 @@ class _SignupScreenState extends State<SignupScreen> {
         ),
         const SizedBox(height: 6),
         Text(
-          AppStrings.createAccountSubtitle,
+          'أنشئ مساحتك الشخصية فوراً على الجهاز أو فعّل المزامنة برقم الجوال',
           style: TextStyle(
             fontSize: 13,
             height: 1.4,
@@ -500,7 +347,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 child: _SignupModeChip(
                   isSelected: isOffline,
                   title: 'محلي (أوفلاين)',
-                  subtitle: 'تشفير على الهاتف 🔒',
+                  subtitle: 'بدون كلمة مرور ⚡',
                   activeColor: AppColors.emerald,
                   onTap: () =>
                       setState(() => _signupMode = AuthConnectionMode.offline),
@@ -511,7 +358,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 child: _SignupModeChip(
                   isSelected: !isOffline,
                   title: 'سحابي (أونلاين)',
-                  subtitle: 'مزامنة ومجموعات ☁️',
+                  subtitle: 'تحقق برقم الهاتف ☁️',
                   activeColor: const Color(0xFF0284C7),
                   onTap: () =>
                       setState(() => _signupMode = AuthConnectionMode.online),

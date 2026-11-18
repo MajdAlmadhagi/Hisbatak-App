@@ -16,7 +16,7 @@ class FakeProfileRepository implements IProfileRepository {
   @override
   Future<UserProfile> getUserProfile() async {
     return const UserProfile(
-      id: 'user_me',
+      id: '550e8400-e29b-41d4-a716-446655440000',
       fullName: 'مستخدم تجريبي',
       email: 'test@local.offline',
       currencyCode: 'YER',
@@ -80,7 +80,7 @@ void main() {
     profileBloc.close();
   });
 
-  Widget buildTestableWidget() {
+  Widget buildTestableWidget({bool disableAnimations = false}) {
     final router = GoRouter(
       initialLocation: '/onboarding',
       routes: [
@@ -89,9 +89,8 @@ void main() {
           builder: (context, state) => const OnboardingScreen(),
         ),
         GoRoute(
-          path: '/setup-profile',
-          builder: (context, state) =>
-              const Scaffold(body: Text('Setup Profile Page')),
+          path: '/login',
+          builder: (context, state) => const Scaffold(body: Text('Login Page')),
         ),
         GoRoute(
           path: '/home',
@@ -104,100 +103,107 @@ void main() {
       value: profileBloc,
       child: MaterialApp.router(
         routerConfig: router,
-        builder: (context, child) => Directionality(
-          textDirection: TextDirection.rtl,
-          child: child!,
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            disableAnimations: disableAnimations,
+          ),
+          child: Directionality(
+            textDirection: TextDirection.rtl,
+            child: child!,
+          ),
         ),
       ),
     );
   }
 
-  group('OnboardingScreen tests', () {
-    testWidgets('Renders first slide correctly with branding and next button',
+  Future<void> pumpTransition(WidgetTester tester) async {
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+  }
+
+  group('OnboardingScreen 3D & Neumorphism tests', () {
+    testWidgets(
+        'Renders streamlined first slide with 3D stage, light copy, and gentle animation',
         (WidgetTester tester) async {
       await tester.pumpWidget(buildTestableWidget());
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 250));
 
-      // Brand badge and app title
       expect(find.text(AppStrings.appName), findsOneWidget);
       expect(find.text(AppStrings.offlineReady), findsOneWidget);
-
-      // Slide 1 title and tag
-      expect(find.text(AppStrings.onboardingSlide1Title), findsOneWidget);
-      expect(find.text(AppStrings.onboardingSlide1Tag), findsOneWidget);
-      expect(find.text(AppStrings.onboardingSlide1Feature1), findsOneWidget);
-
-      // Next and Skip buttons
+      expect(find.text('مصاريفك بوضوح تام'), findsOneWidget);
+      expect(find.text('الميزانية الشخصية'), findsOneWidget);
       expect(find.text(AppStrings.onboardingNext), findsOneWidget);
       expect(find.text(AppStrings.onboardingSkip), findsOneWidget);
+      // Verify old heavy bullet clutter was removed
+      expect(find.text(AppStrings.onboardingSlide1Feature1), findsNothing);
+      expect(find.text(AppStrings.onboardingSafeOffline), findsNothing);
+      expect(tester.hasRunningAnimations, isTrue);
     });
 
-    testWidgets(
-        'Swipes horizontally through all 4 slides including online sync',
+    testWidgets('Navigates cleanly through all 3 Isometric 3D slides',
         (WidgetTester tester) async {
       await tester.pumpWidget(buildTestableWidget());
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 250));
 
-      // Tap Next to advance to slide 2
+      // Slide 2
       await tester.tap(find.text(AppStrings.onboardingNext));
-      await tester.pumpAndSettle();
+      await pumpTransition(tester);
 
-      expect(find.text(AppStrings.onboardingSlide2Title), findsOneWidget);
-      expect(find.text(AppStrings.onboardingSlide2Tag), findsOneWidget);
-      expect(find.text(AppStrings.onboardingSlide2Feature1), findsOneWidget);
+      expect(find.text('قسّم الفواتير بلا إحراج'), findsOneWidget);
+      expect(find.text('المجموعات والذمم'), findsOneWidget);
 
-      // Tap Next to advance to slide 3
+      // Slide 3
       await tester.tap(find.text(AppStrings.onboardingNext));
-      await tester.pumpAndSettle();
+      await pumpTransition(tester);
 
-      expect(find.text(AppStrings.onboardingSlide3Title), findsOneWidget);
-      expect(find.text(AppStrings.onboardingSlide3Tag), findsOneWidget);
-      expect(find.text(AppStrings.onboardingSlide3Feature1), findsOneWidget);
-
-      // Tap Next to advance to slide 4 (Online features)
-      await tester.tap(find.text(AppStrings.onboardingNext));
-      await tester.pumpAndSettle();
-
-      expect(find.text(AppStrings.onboardingSlide4Title), findsOneWidget);
-      expect(find.text(AppStrings.onboardingSlide4Tag), findsOneWidget);
-      expect(find.text(AppStrings.onboardingSlide4Feature1), findsOneWidget);
-
-      // On final slide, "ابدأ الآن" is shown
+      expect(find.text('أوفلاين دائماً.. سحابي متى شئت'), findsOneWidget);
+      expect(find.text('خصوصية ومزامنة مرنة'), findsOneWidget);
       expect(find.text(AppStrings.onboardingStart), findsOneWidget);
     });
 
-    testWidgets('Tapping Start on last slide sets onboarding completed',
+    testWidgets(
+        'Tapping Start on last slide completes onboarding and opens Login',
         (WidgetTester tester) async {
       await tester.pumpWidget(buildTestableWidget());
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 200));
 
-      // Navigate to last slide (4th slide)
       await tester.tap(find.text(AppStrings.onboardingNext));
-      await tester.pumpAndSettle();
+      await pumpTransition(tester);
       await tester.tap(find.text(AppStrings.onboardingNext));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text(AppStrings.onboardingNext));
-      await tester.pumpAndSettle();
+      await pumpTransition(tester);
 
       expect(fakeRepo.onboardingCompleted, isFalse);
 
       await tester.tap(find.text(AppStrings.onboardingStart));
-      await tester.pump();
+      await pumpTransition(tester);
 
       expect(fakeRepo.onboardingCompleted, isTrue);
+      expect(find.text('Login Page'), findsOneWidget);
     });
 
-    testWidgets('Tapping Skip immediately sets onboarding completed',
+    testWidgets('Tapping Skip immediately completes onboarding',
         (WidgetTester tester) async {
       await tester.pumpWidget(buildTestableWidget());
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 200));
 
       expect(fakeRepo.onboardingCompleted, isFalse);
 
       await tester.tap(find.text(AppStrings.onboardingSkip));
-      await tester.pump();
+      await pumpTransition(tester);
 
       expect(fakeRepo.onboardingCompleted, isTrue);
+      expect(find.text('Login Page'), findsOneWidget);
+    });
+
+    testWidgets('Respects device reduced motion setting',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(buildTestableWidget(disableAnimations: true));
+      await tester.pumpAndSettle();
+
+      expect(tester.hasRunningAnimations, isFalse);
+      expect(find.text('مصاريفك بوضوح تام'), findsOneWidget);
     });
   });
 }

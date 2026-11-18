@@ -1,5 +1,25 @@
 import '../entities/auth_session.dart';
 
+/// Supported external identity providers for progressive account linking.
+enum SocialAuthProvider { google, apple }
+
+/// Challenge metadata returned when requesting a phone OTP code.
+class OtpChallengeResult {
+  final String phoneE164;
+  final String challengeId;
+  final int expiresInSeconds;
+
+  /// Populated only when cloud backend is not configured (local preview flow).
+  final String? previewCode;
+
+  const OtpChallengeResult({
+    required this.phoneE164,
+    required this.challengeId,
+    this.expiresInSeconds = 180,
+    this.previewCode,
+  });
+}
+
 /// [IAuthRepository] defines the authentication contract for Hisbatak.
 ///
 /// SOLID Principles:
@@ -33,4 +53,31 @@ abstract class IAuthRepository {
 
   /// Saves the user's preferred connection mode.
   Future<void> setPreferredConnectionMode(AuthConnectionMode mode);
+}
+
+/// Progressive cloud authentication & guest-account claiming contract (ISP).
+abstract class ICloudAuthRepository {
+  Future<OtpChallengeResult> requestPhoneOtp({required String phoneE164});
+
+  Future<AuthSession> verifyPhoneOtp({
+    required String phoneE164,
+    required String code,
+    String? challengeId,
+    String? guestUserId,
+  });
+
+  Future<AuthSession> signInWithSocial({
+    required SocialAuthProvider provider,
+    required String idToken,
+    String? email,
+    String? displayName,
+    String? guestUserId,
+  });
+
+  Future<AuthSession> claimGuestAccount({
+    required String guestUserId,
+    required String phoneE164,
+    required String otpCode,
+    String? challengeId,
+  });
 }

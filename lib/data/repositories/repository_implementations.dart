@@ -1,13 +1,15 @@
-import '../../domain/entities/user_profile.dart';
-import '../../domain/entities/transaction_item.dart';
 import '../../domain/entities/budget_summary.dart';
-import '../../domain/entities/group_entity.dart';
 import '../../domain/entities/expense_split_entity.dart';
-import '../../domain/repositories/i_profile_repository.dart';
+import '../../domain/entities/group_entity.dart';
+import '../../domain/entities/transaction_item.dart';
+import '../../domain/entities/user_profile.dart';
 import '../../domain/repositories/i_budget_repository.dart';
 import '../../domain/repositories/i_group_repository.dart';
+import '../../domain/repositories/i_profile_repository.dart';
+import '../datasources/auth/auth_local_data_source.dart';
 import '../datasources/local_datasources.dart';
 import '../datasources/preferences/app_preferences_data_source.dart';
+import '../../core/utils/validators.dart';
 import '../models/app_models.dart';
 
 /// SOLID Principle: Dependency Inversion Principle (DIP) & Liskov Substitution Principle (LSP)
@@ -16,10 +18,12 @@ import '../models/app_models.dart';
 class ProfileRepositoryImpl implements IProfileRepository {
   final IProfileLocalDataSource localDataSource;
   final IAppPreferencesDataSource preferencesDataSource;
+  final IAuthLocalDataSource? authLocalDataSource;
 
   ProfileRepositoryImpl({
     required this.localDataSource,
     required this.preferencesDataSource,
+    this.authLocalDataSource,
   });
 
   @override
@@ -39,6 +43,7 @@ class ProfileRepositoryImpl implements IProfileRepository {
       id: profile.id,
       fullName: profile.fullName,
       email: profile.email,
+      phoneE164: profile.phoneE164,
       currencyCode: profile.currencyCode,
       currencySymbol: profile.currencySymbol,
       monthlyBudgetLimit: profile.monthlyBudgetLimit,
@@ -48,8 +53,10 @@ class ProfileRepositoryImpl implements IProfileRepository {
       isConfigured: profile.isConfigured,
     );
     await localDataSource.saveUserProfile(model);
-    await preferencesDataSource.setDarkMode(profile.isDarkMode);
-    await preferencesDataSource.setBiometricEnabled(profile.biometricEnabled);
+    if (profile.isConfigured) {
+      await preferencesDataSource.setDarkMode(profile.isDarkMode);
+      await preferencesDataSource.setBiometricEnabled(profile.biometricEnabled);
+    }
   }
 
   @override
@@ -76,6 +83,7 @@ class ProfileRepositoryImpl implements IProfileRepository {
   Future<void> resetAllData() async {
     await localDataSource.clearAllData();
     await preferencesDataSource.clearAllPreferences();
+    await authLocalDataSource?.clearSession();
   }
 
   @override
@@ -90,7 +98,7 @@ class ProfileRepositoryImpl implements IProfileRepository {
 }
 
 /// SOLID Principle: Dependency Inversion Principle (DIP)
-/// [BudgetRepositoryImpl] implements [IBudgetRepository].
+/// [BudgetRepositoryImpl] implements [IBudgetRepository] with real SQLite aggregations.
 class BudgetRepositoryImpl implements IBudgetRepository {
   final IBudgetLocalDataSource localDataSource;
   final IProfileLocalDataSource profileDataSource;
@@ -103,25 +111,25 @@ class BudgetRepositoryImpl implements IBudgetRepository {
   @override
   Future<BudgetSummary> getBudgetSummary() async {
     final profile = await profileDataSource.getUserProfile();
-    final spent = await localDataSource.getTotalExpenses();
+    final now = DateTime.now();
+    final monthlySpent = await localDataSource.getMonthlyExpensesTotal(month: now);
+    final monthlyIncome = await localDataSource.getMonthlyIncomeTotal(month: now);
+    final categories =
+        await localDataSource.getMonthlyCategoryExpenses(month: now);
+
     final available = profile.currentAvailable;
     final limit = profile.monthlyBudgetLimit;
-    final remainingPercent = limit > 0 ? (available / limit) * 100.0 : 74.2;
-
-    // Categories Breakdown matching Screen 2
-    final categories = [
-      const CategoryExpense(categoryName: 'مطاعم ومقاهي', amount: 1800, percentage: 35.0, colorValue: 0xFFEF4444),
-      const CategoryExpense(categoryName: 'بقالة وتموين', amount: 1290, percentage: 25.0, colorValue: 0xFF10B981),
-      const CategoryExpense(categoryName: 'فواتير ومسكن', amount: 1290, percentage: 25.0, colorValue: 0xFF1E293B),
-      const CategoryExpense(categoryName: 'ترفيه وتسوق', amount: 770, percentage: 15.0, colorValue: 0xFF6366F1),
-    ];
+    final remainingPercent = limit > 0
+        ? (((limit - monthlySpent) / limit) * 100.0).clamp(0.0, 100.0)
+        : 0.0;
+    final monthTrending = monthlyIncome - monthlySpent;
 
     return BudgetSummary(
       totalAvailable: available,
-      totalSpent: spent,
+      totalSpent: monthlySpent,
       budgetLimit: limit,
-      monthTrending: 2400.0,
-      remainingPercentage: remainingPercent,
+      monthTrending: monthTrending,
+      remainingPercentage: double.parse(remainingPercent.toStringAsFixed(1)),
       categories: categories,
     );
   }
@@ -228,6 +236,8 @@ class GroupRepositoryImpl implements IGroupRepository {
       groupId: member.groupId,
       name: member.name,
       avatarUrl: member.avatarUrl,
+      phoneE164: member.phoneE164,
+      linkedUserId: member.linkedUserId,
       balance: member.balance,
       note: member.note,
       lastActivity: member.lastActivity,
@@ -241,7 +251,10 @@ class GroupRepositoryImpl implements IGroupRepository {
   }
 
   @override
-  Future<void> settleMemberBalance({required String memberId, required String groupId}) async {
+  Future<void> settleMemberBalance({
+    required String memberId,
+    required String groupId,
+  }) async {
     await localDataSource.settleMemberBalance(memberId, groupId);
   }
 
@@ -256,12 +269,32 @@ class GroupRepositoryImpl implements IGroupRepository {
     final Map<String, List<GroupMemberWithGroupEntity>> grouped = {};
 
     for (final member in rawMembers) {
-      final key = member.name.trim();
+      final linkedId = member.linkedUserId?.trim();
+      final normalizedPhone = Validators.tryNormalizePhoneE164(member.phoneE164);
+      final key = (linkedId != null && linkedId.isNotEmpty)
+          ? 'uid:$linkedId'
+          : (normalizedPhone != null
+              ? 'phone:$normalizedPhone'
+              : 'name:${member.name.trim().toLowerCase()}');
       grouped.putIfAbsent(key, () => []).add(member);
     }
 
     final List<ConsolidatedMemberEntity> consolidated = [];
-    grouped.forEach((name, items) {
+    grouped.forEach((_, items) {
+      String? phoneE164;
+      String? linkedUserId;
+      String? avatarUrl;
+      for (final item in items) {
+        phoneE164 ??= Validators.tryNormalizePhoneE164(item.phoneE164) ??
+            (item.phoneE164?.trim().isNotEmpty == true
+                ? item.phoneE164!.trim()
+                : null);
+        linkedUserId ??= item.linkedUserId?.trim().isNotEmpty == true
+            ? item.linkedUserId!.trim()
+            : null;
+        avatarUrl ??= item.avatarUrl;
+      }
+
       final memberships = items
           .map((item) => MemberGroupMembership(
                 memberId: item.id,
@@ -276,8 +309,10 @@ class GroupRepositoryImpl implements IGroupRepository {
           .toList();
 
       consolidated.add(ConsolidatedMemberEntity(
-        name: name,
-        avatarUrl: items.first.avatarUrl,
+        name: items.first.name.trim(),
+        avatarUrl: avatarUrl,
+        phoneE164: phoneE164,
+        linkedUserId: linkedUserId,
         memberships: memberships,
       ));
     });
@@ -285,4 +320,3 @@ class GroupRepositoryImpl implements IGroupRepository {
     return consolidated;
   }
 }
-

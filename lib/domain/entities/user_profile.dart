@@ -8,6 +8,7 @@ class UserProfile extends Equatable {
   final String id;
   final String fullName;
   final String email;
+  final String? phoneE164;
   final String currencyCode;
   final String currencySymbol;
   final double monthlyBudgetLimit;
@@ -20,6 +21,7 @@ class UserProfile extends Equatable {
     required this.id,
     required this.fullName,
     required this.email,
+    this.phoneE164,
     required this.currencyCode,
     required this.currencySymbol,
     required this.monthlyBudgetLimit,
@@ -33,6 +35,7 @@ class UserProfile extends Equatable {
     String? id,
     String? fullName,
     String? email,
+    String? phoneE164,
     String? currencyCode,
     String? currencySymbol,
     double? monthlyBudgetLimit,
@@ -45,6 +48,7 @@ class UserProfile extends Equatable {
       id: id ?? this.id,
       fullName: fullName ?? this.fullName,
       email: email ?? this.email,
+      phoneE164: phoneE164 ?? this.phoneE164,
       currencyCode: currencyCode ?? this.currencyCode,
       currencySymbol: currencySymbol ?? this.currencySymbol,
       monthlyBudgetLimit: monthlyBudgetLimit ?? this.monthlyBudgetLimit,
@@ -60,6 +64,7 @@ class UserProfile extends Equatable {
         id,
         fullName,
         email,
+        phoneE164,
         currencyCode,
         currencySymbol,
         monthlyBudgetLimit,

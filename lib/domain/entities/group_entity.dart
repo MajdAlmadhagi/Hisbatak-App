@@ -21,16 +21,19 @@ class GroupEntity extends Equatable {
   });
 
   @override
-  List<Object?> get props => [id, name, type, iconName, memberCount, createdAt];
+  List<Object?> get props =>
+      [id, name, type, iconName, memberCount, createdAt];
 }
 
-/// [GroupMemberEntity] captures member identity, debt/credit balance, and recent activity notes.
+/// [GroupMemberEntity] captures member identity, debt/credit balance, and optional phone/user link.
 class GroupMemberEntity extends Equatable {
   final String id;
   final String groupId;
   final String name;
   final String? avatarUrl;
-  final double balance; // > 0: owes user (يَدين لك), < 0: user owes them (أنت مدين لها), == 0: balanced
+  final String? phoneE164;
+  final String? linkedUserId;
+  final double balance; // > 0: owes user, < 0: user owes them, == 0: balanced
   final String? note;
   final String? lastActivity;
 
@@ -39,6 +42,8 @@ class GroupMemberEntity extends Equatable {
     required this.groupId,
     required this.name,
     this.avatarUrl,
+    this.phoneE164,
+    this.linkedUserId,
     required this.balance,
     this.note,
     this.lastActivity,
@@ -47,18 +52,31 @@ class GroupMemberEntity extends Equatable {
   bool get owesUser => balance > 0;
   bool get userOwes => balance < 0;
   bool get isBalanced => balance == 0;
+  bool get isLinked =>
+      (linkedUserId != null && linkedUserId!.isNotEmpty) ||
+      (phoneE164 != null && phoneE164!.isNotEmpty);
 
   @override
-  List<Object?> get props => [id, groupId, name, avatarUrl, balance, note, lastActivity];
+  List<Object?> get props => [
+        id,
+        groupId,
+        name,
+        avatarUrl,
+        phoneE164,
+        linkedUserId,
+        balance,
+        note,
+        lastActivity,
+      ];
 }
 
 /// [DebtSummary] summarizes aggregated group balances across all members.
 class DebtSummary extends Equatable {
-  final double totalOwedToUser; // لك في ذمة الآخرين
-  final int personsOwingUser;   // من شخصين
-  final double totalUserOwes;   // عليك للآخرين
-  final int personsUserOwes;    // لشخص واحد
-  final double netPosition;     // صافي الموقف المالي
+  final double totalOwedToUser;
+  final int personsOwingUser;
+  final double totalUserOwes;
+  final int personsUserOwes;
+  final double netPosition;
 
   const DebtSummary({
     required this.totalOwedToUser,
@@ -87,6 +105,8 @@ class GroupMemberWithGroupEntity extends Equatable {
   final String groupIcon;
   final String name;
   final String? avatarUrl;
+  final String? phoneE164;
+  final String? linkedUserId;
   final double balance;
   final String? note;
   final String? lastActivity;
@@ -99,6 +119,8 @@ class GroupMemberWithGroupEntity extends Equatable {
     required this.groupIcon,
     required this.name,
     this.avatarUrl,
+    this.phoneE164,
+    this.linkedUserId,
     required this.balance,
     this.note,
     this.lastActivity,
@@ -117,6 +139,8 @@ class GroupMemberWithGroupEntity extends Equatable {
         groupIcon,
         name,
         avatarUrl,
+        phoneE164,
+        linkedUserId,
         balance,
         note,
         lastActivity,
@@ -163,16 +187,18 @@ class MemberGroupMembership extends Equatable {
 }
 
 /// [ConsolidatedMemberEntity] consolidates a member person across multiple groups.
-///
-/// Tracks all group memberships, aggregated balance, and available groups to join.
 class ConsolidatedMemberEntity extends Equatable {
   final String name;
   final String? avatarUrl;
+  final String? phoneE164;
+  final String? linkedUserId;
   final List<MemberGroupMembership> memberships;
 
   const ConsolidatedMemberEntity({
     required this.name,
     this.avatarUrl,
+    this.phoneE164,
+    this.linkedUserId,
     required this.memberships,
   });
 
@@ -196,6 +222,11 @@ class ConsolidatedMemberEntity extends Equatable {
   }
 
   @override
-  List<Object?> get props => [name, avatarUrl, memberships];
+  List<Object?> get props => [
+        name,
+        avatarUrl,
+        phoneE164,
+        linkedUserId,
+        memberships,
+      ];
 }
-
