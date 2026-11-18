@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:iconsax_flutter/iconsax_flutter.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_theme.dart';
 
 /// [SocialAuthButtons] renders modern Google & Apple authentication buttons
-/// for the online cloud mode.
+/// for cloud account connection.
 class SocialAuthButtons extends StatelessWidget {
   final VoidCallback onGooglePressed;
   final VoidCallback onApplePressed;
@@ -57,28 +56,25 @@ class SocialAuthButtons extends StatelessWidget {
         // Social Buttons Row
         Row(
           children: [
-            // Google Button
             Expanded(
               child: _SocialButton(
-                  label: 'تسجيل الدخول بإستخدام Google',
-                  onPressed: onGooglePressed,
-                  iconWidget: Icon(Iconsax.google_1)
-                  //const _GoogleIcon(),
-                  ),
+                label: 'Google',
+                onPressed: onGooglePressed,
+                iconWidget: const _GoogleIcon(),
+              ),
             ),
-            // const SizedBox(width: 12),
-            // // Apple Button
-            // Expanded(
-            //   child: _SocialButton(
-            //     label: 'Apple',
-            //     onPressed: onApplePressed,
-            //       iconWidget: Icon(
-            //       Icons.apple,
-            //       size: 22,
-            //       color: isDark ? Colors.white : Colors.black,
-            //     ),
-            //   ),
-            // ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _SocialButton(
+                label: 'Apple',
+                onPressed: onApplePressed,
+                iconWidget: Icon(
+                  Icons.apple,
+                  size: 22,
+                  color: isDark ? Colors.white : Colors.black,
+                ),
+              ),
+            ),
           ],
         ),
       ],
@@ -157,28 +153,22 @@ class _GoogleIcon extends StatelessWidget {
       width: 20,
       height: 20,
       alignment: Alignment.center,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // Styled Google 'G' using colored text glyph
-          Text(
-            'G',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w900,
-              fontFamily: 'Roboto',
-              foreground: Paint()
-                ..shader = const LinearGradient(
-                  colors: [
-                    Color(0xFF4285F4),
-                    Color(0xFF34A853),
-                    Color(0xFFFBBC05),
-                    Color(0xFFEA4335),
-                  ],
-                ).createShader(const Rect.fromLTWH(0, 0, 20, 20)),
-            ),
-          ),
-        ],
+      child: Text(
+        'G',
+        style: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w900,
+          fontFamily: 'Roboto',
+          foreground: Paint()
+            ..shader = const LinearGradient(
+              colors: [
+                Color(0xFF4285F4),
+                Color(0xFF34A853),
+                Color(0xFFFBBC05),
+                Color(0xFFEA4335),
+              ],
+            ).createShader(const Rect.fromLTWH(0, 0, 20, 20)),
+        ),
       ),
     );
   }

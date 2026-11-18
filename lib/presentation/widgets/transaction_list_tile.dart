@@ -4,6 +4,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
 import '../../domain/entities/transaction_item.dart';
+import 'profile_currency_extension.dart';
 
 /// [TransactionListTile] renders individual personal transactions matching Screen 2.
 ///
@@ -11,8 +12,14 @@ import '../../domain/entities/transaction_item.dart';
 class TransactionListTile extends StatelessWidget {
   final TransactionItem item;
   final VoidCallback? onTap;
+  final String? currencySymbol;
 
-  const TransactionListTile({super.key, required this.item, this.onTap});
+  const TransactionListTile({
+    super.key,
+    required this.item,
+    this.onTap,
+    this.currencySymbol,
+  });
 
   IconData _getCategoryIcon(String iconName) {
     switch (iconName) {
@@ -57,6 +64,7 @@ class TransactionListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final isIncome = item.type == TransactionType.income;
     final isDark = context.isDarkMode;
+    final activeCurrency = currencySymbol ?? context.watchCurrencySymbol();
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -68,11 +76,12 @@ class TransactionListTile extends StatelessWidget {
           onTap: onTap,
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                // border: Border.all(color: context.appBorder),
-                border: Border(
-                    right: BorderSide(color: AppColors.emerald, width: 3))),
+            decoration: const BoxDecoration(
+              borderRadius: BorderRadius.all(Radius.circular(16)),
+              border: Border(
+                right: BorderSide(color: AppColors.emerald, width: 3),
+              ),
+            ),
             child: Row(
               children: [
                 // Icon Container
@@ -110,9 +119,10 @@ class TransactionListTile extends StatelessWidget {
                             ? '${Formatters.formatArabicDate(item.dateTime)} • ${item.category} • ${item.groupName}'
                             : '${Formatters.formatArabicDate(item.dateTime)} • ${item.category}',
                         style: TextStyle(
-                            fontSize: 11.3,
-                            color: context.appTextSecondary,
-                            fontWeight: FontWeight.bold),
+                          fontSize: 11.3,
+                          color: context.appTextSecondary,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                   ),
@@ -124,8 +134,8 @@ class TransactionListTile extends StatelessWidget {
                   children: [
                     Text(
                       isIncome
-                          ? '+${Formatters.formatCurrency(item.amount)}'
-                          : '-${Formatters.formatCurrency(item.amount)}',
+                          ? '+${Formatters.formatCurrency(item.amount, currencySymbol: activeCurrency)}'
+                          : '-${Formatters.formatCurrency(item.amount, currencySymbol: activeCurrency)}',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w900,
@@ -142,9 +152,10 @@ class TransactionListTile extends StatelessWidget {
                     Text(
                       item.paymentMethod,
                       style: TextStyle(
-                          fontSize: 10.5,
-                          color: context.appTextMuted,
-                          fontWeight: FontWeight.bold),
+                        fontSize: 10.5,
+                        color: context.appTextMuted,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),

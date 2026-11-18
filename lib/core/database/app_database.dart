@@ -2,9 +2,10 @@ import 'dart:async';
 import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
+import '../utils/id_generator.dart';
 
 /// [AppDatabase] manages the local SQLite database lifecycle, schema creation,
-/// and initial seed data for Hisbatak's offline-first architecture.
+/// migrations up to v7, sync outbox tables, and debug seed data.
 ///
 /// SOLID Principles:
 /// - Single Responsibility Principle (SRP): Manages SQLite connection and migrations only.
@@ -15,48 +16,42 @@ class AppDatabase {
 
   AppDatabase._internal();
 
-  ///Get database instance to access db operations (singleton pattern)
-  ///This function is called/invoked every time the app is started
+  /// Get database instance to access db operations (singleton pattern).
   Future<Database> get database async {
-    //if the database is already initialized, return the database
     if (_database != null) return _database!;
-
-    //otherwise, initialize the database and return it
     _database = await _initDatabase();
     return _database!;
   }
 
-  ///Initialize database and create tables (will be triggered/invoked when the app is installed for the first time)
+  /// Initialize database and open at version 7.
   Future<Database> _initDatabase() async {
-    //get the database path that is in the application documents directory
     final dbPath = await getDatabasesPath();
-    //join the database path with the database name
     final path = join(dbPath, 'hisbatak_offline.db');
 
-    //open the database and create tables if not exists for first time , and upgrade the database if the version is greater than the current version
     return await openDatabase(
       path,
-      version: 6,
+      version: 7,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
       onOpen: _onOpen,
     );
   }
 
-  // Shared by onCreate and the v1 -> v2 upgrade, so fresh and upgraded
-  // installs end up with exactly the same tables.
   static const _createUserProfileTable = '''
     CREATE TABLE user_profile (
-      id TEXT PRIMARY KEY, -- always 'user_me'
+      id TEXT PRIMARY KEY, -- stable UUIDv4 identity
       full_name TEXT NOT NULL,
       email TEXT NOT NULL,
+      phone_e164 TEXT,
       currency_code TEXT NOT NULL,
       currency_symbol TEXT NOT NULL,
       monthly_budget_limit REAL NOT NULL,
       current_available REAL NOT NULL,
       biometric_enabled INTEGER NOT NULL,
       is_dark_mode INTEGER NOT NULL,
-      is_configured INTEGER NOT NULL
+      is_configured INTEGER NOT NULL,
+      updated_at TEXT NOT NULL DEFAULT '',
+      version INTEGER NOT NULL DEFAULT 1
     )
   ''';
 
@@ -73,26 +68,26 @@ class AppDatabase {
       type TEXT NOT NULL, -- 'expense' or 'income'
       group_id TEXT,
       expense_id TEXT,
-      updated_at TEXT NOT NULL, -- last local edit; the later edit wins a sync conflict
-      deleted_at TEXT, -- set instead of deleting the row, so the deletion can sync
-      is_synced INTEGER NOT NULL DEFAULT 0 -- 0: changed since the last sync
+      updated_at TEXT NOT NULL,
+      deleted_at TEXT,
+      is_synced INTEGER NOT NULL DEFAULT 0,
+      version INTEGER NOT NULL DEFAULT 1,
+      idempotency_key TEXT
     )
   ''';
 
-  // The group tables carry the same sync columns as transactions. They have
-  // no foreign keys: rows pulled from the server can arrive in any order
-  // (a member before its group). Member counts and balances aren't stored;
-  // GroupLocalDataSourceImpl computes them.
   static const _createGroupsTable = '''
     CREATE TABLE groups (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
-      type TEXT NOT NULL, -- 'work', 'home', 'trip', 'other'
+      type TEXT NOT NULL,
       icon_name TEXT NOT NULL,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL,
       deleted_at TEXT,
-      is_synced INTEGER NOT NULL DEFAULT 0
+      is_synced INTEGER NOT NULL DEFAULT 0,
+      version INTEGER NOT NULL DEFAULT 1,
+      idempotency_key TEXT
     )
   ''';
 
@@ -102,11 +97,15 @@ class AppDatabase {
       group_id TEXT NOT NULL,
       name TEXT NOT NULL,
       avatar_url TEXT,
-      note TEXT, -- latest activity, for display
+      phone_e164 TEXT,
+      linked_user_id TEXT,
+      note TEXT,
       last_activity TEXT,
       updated_at TEXT NOT NULL,
       deleted_at TEXT,
-      is_synced INTEGER NOT NULL DEFAULT 0
+      is_synced INTEGER NOT NULL DEFAULT 0,
+      version INTEGER NOT NULL DEFAULT 1,
+      idempotency_key TEXT
     )
   ''';
 
@@ -116,32 +115,33 @@ class AppDatabase {
       group_id TEXT NOT NULL,
       title TEXT NOT NULL,
       total_amount REAL NOT NULL,
-      payer_id TEXT NOT NULL, -- 'user_me' when you paid
+      payer_id TEXT NOT NULL,
       payer_name TEXT NOT NULL,
       category TEXT NOT NULL,
-      split_method TEXT NOT NULL, -- 'equal', 'percentage', 'custom'
+      split_method TEXT NOT NULL,
       date_time TEXT NOT NULL,
       updated_at TEXT NOT NULL,
       deleted_at TEXT,
-      is_synced INTEGER NOT NULL DEFAULT 0
+      is_synced INTEGER NOT NULL DEFAULT 0,
+      version INTEGER NOT NULL DEFAULT 1,
+      idempotency_key TEXT
     )
   ''';
 
-  // Each participant's share of a shared expense. Balances are computed from
-  // these and from settlements, so two devices adding expenses offline both
-  // count once they sync.
   static const _createExpenseSplitsTable = '''
     CREATE TABLE expense_splits (
-      id TEXT PRIMARY KEY, -- '<expense_id>:<member_id>'
+      id TEXT PRIMARY KEY,
       expense_id TEXT NOT NULL,
       group_id TEXT NOT NULL,
-      member_id TEXT NOT NULL, -- 'user_me' for you
+      member_id TEXT NOT NULL,
       amount REAL NOT NULL,
       percentage REAL NOT NULL,
       is_payer INTEGER NOT NULL,
       updated_at TEXT NOT NULL,
       deleted_at TEXT,
-      is_synced INTEGER NOT NULL DEFAULT 0
+      is_synced INTEGER NOT NULL DEFAULT 0,
+      version INTEGER NOT NULL DEFAULT 1,
+      idempotency_key TEXT
     )
   ''';
 
@@ -150,79 +150,122 @@ class AppDatabase {
       id TEXT PRIMARY KEY,
       group_id TEXT NOT NULL,
       member_id TEXT NOT NULL,
-      amount REAL NOT NULL, -- positive: the member paid you; negative: you paid the member
+      amount REAL NOT NULL,
       date_time TEXT NOT NULL,
       updated_at TEXT NOT NULL,
       deleted_at TEXT,
-      is_synced INTEGER NOT NULL DEFAULT 0
+      is_synced INTEGER NOT NULL DEFAULT 0,
+      version INTEGER NOT NULL DEFAULT 1,
+      idempotency_key TEXT
     )
   ''';
 
-  ///Function of creating tables (will be triggered/invoked when the app is installed for the first time)
+  static const _createSyncOutboxTable = '''
+    CREATE TABLE IF NOT EXISTS sync_outbox (
+      id TEXT PRIMARY KEY,
+      entity_type TEXT NOT NULL,
+      entity_id TEXT NOT NULL,
+      operation TEXT NOT NULL,
+      payload_json TEXT NOT NULL,
+      idempotency_key TEXT NOT NULL,
+      retry_count INTEGER NOT NULL DEFAULT 0,
+      last_error TEXT,
+      status TEXT NOT NULL DEFAULT 'pending',
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    )
+  ''';
+
+  static const _createSyncStateTable = '''
+    CREATE TABLE IF NOT EXISTS sync_state (
+      key TEXT PRIMARY KEY,
+      value TEXT,
+      updated_at TEXT NOT NULL
+    )
+  ''';
+
   FutureOr<void> _onCreate(Database db, int version) async {
-    // 1. User Profile Table
     await db.execute(_createUserProfileTable);
-
-    // 2. Personal Transactions Table
     await db.execute(_createTransactionsTable);
-
-    // 3. Groups Table
     await db.execute(_createGroupsTable);
-
-    // 4. Group Members Table
     await db.execute(_createGroupMembersTable);
-
-    // 5. Group Shared Expenses Table, with each participant's share and the settlements
     await db.execute(_createGroupExpensesTable);
     await db.execute(_createExpenseSplitsTable);
     await db.execute(_createSettlementsTable);
+    await db.execute(_createSyncOutboxTable);
+    await db.execute(_createSyncStateTable);
+    await _ensureIndexes(db);
 
-    debugPrint('=========Database tables created successfully============');
+    debugPrint('=========Database v7 tables created successfully============');
 
-    // 6. Seed demo data matching the Stitch designs, in debug builds only:
-    // real users start empty, and the demo rows must never sync to their accounts.
     if (kDebugMode) await _seedDatabase(db);
   }
 
-  ///Upgrades a database created by an older app version, step by step.
+  /// Upgrades a database created by an older app version, step by step.
   FutureOr<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) await _upgradeToV2(db);
     if (oldVersion < 3) await _upgradeToV3(db);
     if (oldVersion < 4) await _upgradeToV4(db);
     if (oldVersion < 5) await _upgradeToV5(db);
     if (oldVersion < 6) await _upgradeToV6(db);
+    if (oldVersion < 7) await _upgradeToV7(db);
 
-    debugPrint("===========Database tables upgraded successfully============");
+    debugPrint('===========Database tables upgraded successfully============');
   }
 
-  /// Always ensures required schema columns exist upon opening, even across hot restarts
+  Future<void> _safeExecute(Database db, String sql) async {
+    try {
+      await db.execute(sql);
+    } catch (_) {}
+  }
+
+  Future<void> _ensureIndexes(Database db) async {
+    await _safeExecute(
+      db,
+      'CREATE INDEX IF NOT EXISTS idx_group_members_group_id ON group_members(group_id)',
+    );
+    await _safeExecute(
+      db,
+      'CREATE INDEX IF NOT EXISTS idx_group_members_name ON group_members(name)',
+    );
+    await _safeExecute(
+      db,
+      'CREATE INDEX IF NOT EXISTS idx_group_members_phone ON group_members(phone_e164)',
+    );
+    await _safeExecute(
+      db,
+      'CREATE INDEX IF NOT EXISTS idx_group_members_linked_user ON group_members(linked_user_id)',
+    );
+    await _safeExecute(
+      db,
+      'CREATE INDEX IF NOT EXISTS idx_sync_outbox_status ON sync_outbox(status, created_at)',
+    );
+  }
+
   FutureOr<void> _onOpen(Database db) async {
-    try {
-      await db.execute('ALTER TABLE transactions ADD COLUMN group_id TEXT');
-    } catch (_) {}
-    try {
-      await db.execute('ALTER TABLE transactions ADD COLUMN expense_id TEXT');
-    } catch (_) {}
-    try {
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_group_members_group_id ON group_members(group_id)');
-    } catch (_) {}
-    try {
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_group_members_name ON group_members(name)');
-    } catch (_) {}
+    await _safeExecute(db, 'ALTER TABLE transactions ADD COLUMN group_id TEXT');
+    await _safeExecute(db, 'ALTER TABLE transactions ADD COLUMN expense_id TEXT');
+    await _safeExecute(db, 'ALTER TABLE user_profile ADD COLUMN phone_e164 TEXT');
+    await _safeExecute(db, 'ALTER TABLE group_members ADD COLUMN phone_e164 TEXT');
+    await _safeExecute(db, 'ALTER TABLE group_members ADD COLUMN linked_user_id TEXT');
+    await _safeExecute(db, _createSyncOutboxTable);
+    await _safeExecute(db, _createSyncStateTable);
+    await _ensureIndexes(db);
   }
 
   /// v2: makes the database ready for sync.
-  /// - user_profile.id becomes TEXT (v1 declared INTEGER, which rejects 'user_me').
-  /// - transactions gains updated_at, deleted_at, and a working is_synced flag.
-  /// - stored dates move from device-local time to UTC.
   Future<void> _upgradeToV2(Database db) async {
-    // SQLite can't change a column's type in place, so both tables are rebuilt.
     await db.execute('ALTER TABLE user_profile RENAME TO user_profile_v1');
     await db.execute(_createUserProfileTable);
     await db.execute('''
-      INSERT INTO user_profile
-      SELECT 'user_me', full_name, email, currency_code, currency_symbol, monthly_budget_limit,
-             current_available, biometric_enabled, is_dark_mode, is_configured
+      INSERT INTO user_profile (
+        id, full_name, email, currency_code, currency_symbol,
+        monthly_budget_limit, current_available, biometric_enabled,
+        is_dark_mode, is_configured
+      )
+      SELECT 'user_me', full_name, email, currency_code, currency_symbol,
+             monthly_budget_limit, current_available, biometric_enabled,
+             is_dark_mode, is_configured
       FROM user_profile_v1
       ORDER BY id = 'user_me' DESC
       LIMIT 1
@@ -231,7 +274,6 @@ class AppDatabase {
 
     await db.execute('ALTER TABLE transactions RENAME TO transactions_v1');
     await db.execute(_createTransactionsTable);
-    // is_synced = 0: nothing has ever reached the server, so every row uploads on the first sync.
     await db.rawInsert('''
       INSERT INTO transactions (id, title, amount, category, category_icon, payment_method,
                                 date_time, type, updated_at, deleted_at, is_synced)
@@ -246,13 +288,7 @@ class AppDatabase {
     await _convertDatesToUtc(db, 'group_expenses', 'date_time');
   }
 
-  /// v3: group balances are computed from each expense's splits and from
-  /// settlements instead of being stored, so expenses added on two devices
-  /// offline both count once they sync.
-  /// - new tables: expense_splits and settlements.
-  /// - the group tables gain the sync columns and lose the stored
-  ///   member_count and balance (both are computed now).
-  /// - each member's stored balance carries over as an opening balance.
+  /// v3: computed group balances from splits and settlements.
   Future<void> _upgradeToV3(Database db) async {
     final now = DateTime.now().toUtc().toIso8601String();
 
@@ -286,8 +322,6 @@ class AppDatabase {
     await db.execute(_createExpenseSplitsTable);
     await db.execute(_createSettlementsTable);
 
-    // v2 never saved splits, so the old expenses add nothing to the computed
-    // balances; the stored balance already includes them.
     final balances = await db.query(
       'group_members_v2',
       columns: ['id', 'group_id', 'name', 'balance'],
@@ -312,37 +346,92 @@ class AppDatabase {
 
   /// v4: Add group_id and expense_id foreign key references to transactions table.
   Future<void> _upgradeToV4(Database db) async {
-    try {
-      await db.execute('ALTER TABLE transactions ADD COLUMN group_id TEXT');
-    } catch (_) {}
-    try {
-      await db.execute('ALTER TABLE transactions ADD COLUMN expense_id TEXT');
-    } catch (_) {}
+    await _safeExecute(db, 'ALTER TABLE transactions ADD COLUMN group_id TEXT');
+    await _safeExecute(db, 'ALTER TABLE transactions ADD COLUMN expense_id TEXT');
   }
 
   /// v5: Ensure group_id and expense_id columns exist on transactions table.
   Future<void> _upgradeToV5(Database db) async {
-    try {
-      await db.execute('ALTER TABLE transactions ADD COLUMN group_id TEXT');
-    } catch (_) {}
-    try {
-      await db.execute('ALTER TABLE transactions ADD COLUMN expense_id TEXT');
-    } catch (_) {}
+    await _safeExecute(db, 'ALTER TABLE transactions ADD COLUMN group_id TEXT');
+    await _safeExecute(db, 'ALTER TABLE transactions ADD COLUMN expense_id TEXT');
   }
 
   /// v6: Add indexes on group_members for fast cross-group member aggregation and lookups.
   Future<void> _upgradeToV6(Database db) async {
-    try {
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_group_members_group_id ON group_members(group_id)');
-    } catch (_) {}
-    try {
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_group_members_name ON group_members(name)');
-    } catch (_) {}
+    await _safeExecute(
+      db,
+      'CREATE INDEX IF NOT EXISTS idx_group_members_group_id ON group_members(group_id)',
+    );
+    await _safeExecute(
+      db,
+      'CREATE INDEX IF NOT EXISTS idx_group_members_name ON group_members(name)',
+    );
   }
 
-  /// Records a balance that existed before splits were saved (or a demo
-  /// balance) as one past expense with a single split, so it adds up like any
-  /// other expense: positive means the member owes you.
+  /// v7: Replace legacy `'user_me'` identity with persistent UUIDv4, add phone E.164,
+  /// shadow-member linking (`linked_user_id`), versioning, idempotency keys, and outbox/sync_state tables.
+  Future<void> _upgradeToV7(Database db) async {
+    await _safeExecute(db, 'ALTER TABLE user_profile ADD COLUMN phone_e164 TEXT');
+    await _safeExecute(
+      db,
+      "ALTER TABLE user_profile ADD COLUMN updated_at TEXT NOT NULL DEFAULT ''",
+    );
+    await _safeExecute(
+      db,
+      'ALTER TABLE user_profile ADD COLUMN version INTEGER NOT NULL DEFAULT 1',
+    );
+
+    await _safeExecute(db, 'ALTER TABLE group_members ADD COLUMN phone_e164 TEXT');
+    await _safeExecute(db, 'ALTER TABLE group_members ADD COLUMN linked_user_id TEXT');
+
+    const syncTables = [
+      'transactions',
+      'groups',
+      'group_members',
+      'group_expenses',
+      'expense_splits',
+      'settlements',
+    ];
+    for (final table in syncTables) {
+      await _safeExecute(
+        db,
+        'ALTER TABLE $table ADD COLUMN version INTEGER NOT NULL DEFAULT 1',
+      );
+      await _safeExecute(
+        db,
+        'ALTER TABLE $table ADD COLUMN idempotency_key TEXT',
+      );
+    }
+
+    await db.execute(_createSyncOutboxTable);
+    await db.execute(_createSyncStateTable);
+    await _ensureIndexes(db);
+
+    // Replace legacy `'user_me'` user id cleanly across profile, expenses, and splits.
+    final profiles = await db.query('user_profile', columns: ['id'], limit: 1);
+    if (profiles.isNotEmpty) {
+      final currentId = profiles.first['id'] as String?;
+      if (currentId == null || currentId.isEmpty || currentId == 'user_me') {
+        final migratedUuid = IdGenerator.uuidV4();
+        final now = DateTime.now().toUtc().toIso8601String();
+        await db.update(
+          'user_profile',
+          {'id': migratedUuid, 'updated_at': now},
+          where: 'id = ?',
+          whereArgs: [currentId ?? 'user_me'],
+        );
+        await db.rawUpdate(
+          "UPDATE group_expenses SET payer_id = ? WHERE payer_id = 'user_me'",
+          [migratedUuid],
+        );
+        await db.rawUpdate(
+          "UPDATE expense_splits SET member_id = ?, id = REPLACE(id, ':user_me', ':' || ?) WHERE member_id = 'user_me'",
+          [migratedUuid, migratedUuid],
+        );
+      }
+    }
+  }
+
   static Future<void> _insertOpeningBalance(
     DatabaseExecutor db, {
     required String groupId,
@@ -351,15 +440,17 @@ class AppDatabase {
     required double balance,
     required String at,
     required bool synced,
+    String currentUserId = 'user_me',
   }) async {
     if (balance == 0) return;
     final memberOwesYou = balance > 0;
     final expenseId = 'opening_${groupId}_$memberId';
-    final debtorId = memberOwesYou ? memberId : 'user_me';
+    final debtorId = memberOwesYou ? memberId : currentUserId;
     final syncColumns = {
       'updated_at': at,
       'deleted_at': null,
-      'is_synced': synced ? 1 : 0
+      'is_synced': synced ? 1 : 0,
+      'version': 1,
     };
 
     await db.insert('group_expenses', {
@@ -367,7 +458,7 @@ class AppDatabase {
       'group_id': groupId,
       'title': 'رصيد سابق',
       'total_amount': balance.abs(),
-      'payer_id': memberOwesYou ? 'user_me' : memberId,
+      'payer_id': memberOwesYou ? currentUserId : memberId,
       'payer_name': memberOwesYou ? 'أنت' : memberName,
       'category': 'رصيد سابق',
       'split_method': 'custom',
@@ -386,10 +477,11 @@ class AppDatabase {
     });
   }
 
-  /// v1 stored dates as DateTime.toIso8601String() of local times: no time
-  /// zone in the string. Read on the same device, they still mean local time.
   Future<void> _convertDatesToUtc(
-      Database db, String table, String column) async {
+    Database db,
+    String table,
+    String column,
+  ) async {
     final rows = await db.query(table, columns: ['id', column]);
     for (final row in rows) {
       final value = row[column] as String?;
@@ -405,12 +497,14 @@ class AppDatabase {
 
   Future<void> _seedDatabase(Database db) async {
     final seededAt = DateTime.now().toUtc().toIso8601String();
+    final demoUserId = IdGenerator.uuidV4();
 
     // Seed Profile
     await db.insert('user_profile', {
-      'id': 'user_me',
+      'id': demoUserId,
       'full_name': 'مجد المذحجي',
       'email': 'tariq.mansour@offline.local',
+      'phone_e164': '+967770000000',
       'currency_code': 'SAR',
       'currency_symbol': 'ر.س',
       'monthly_budget_limit': 20000.0,
@@ -418,9 +512,10 @@ class AppDatabase {
       'biometric_enabled': 1,
       'is_dark_mode': 0,
       'is_configured': 1,
+      'updated_at': seededAt,
+      'version': 1,
     });
 
-    // Seed Personal Transactions matching Screen 2
     final now = DateTime.now();
     await db.insert('transactions', {
       'id': 'tx_1',
@@ -437,6 +532,7 @@ class AppDatabase {
       'expense_id': 'exp_danube_1',
       'updated_at': seededAt,
       'is_synced': 1,
+      'version': 1,
     });
 
     await db.insert('transactions', {
@@ -452,6 +548,7 @@ class AppDatabase {
       'type': 'income',
       'updated_at': seededAt,
       'is_synced': 1,
+      'version': 1,
     });
 
     await db.insert('transactions', {
@@ -467,6 +564,7 @@ class AppDatabase {
       'type': 'expense',
       'updated_at': seededAt,
       'is_synced': 1,
+      'version': 1,
     });
 
     await db.insert('transactions', {
@@ -480,9 +578,10 @@ class AppDatabase {
       'type': 'expense',
       'updated_at': seededAt,
       'is_synced': 1,
+      'version': 1,
     });
 
-    // Seed Groups matching Screen 3
+    // Seed Groups
     await db.insert('groups', {
       'id': 'grp_work',
       'name': 'زملاء العمل',
@@ -491,6 +590,7 @@ class AppDatabase {
       'created_at': DateTime(now.year, now.month, 1).toUtc().toIso8601String(),
       'updated_at': seededAt,
       'is_synced': 1,
+      'version': 1,
     });
 
     await db.insert('groups', {
@@ -502,6 +602,7 @@ class AppDatabase {
           DateTime(now.year, now.month - 1, 15).toUtc().toIso8601String(),
       'updated_at': seededAt,
       'is_synced': 1,
+      'version': 1,
     });
 
     await db.insert('groups', {
@@ -512,50 +613,28 @@ class AppDatabase {
       'created_at': DateTime(now.year, now.month, 5).toUtc().toIso8601String(),
       'updated_at': seededAt,
       'is_synced': 1,
+      'version': 1,
     });
 
-    // Seed Members for 'grp_work' (matching exact UI debts from Screen 3).
-    // Balances are computed, so each demo debt is seeded as an opening balance.
     const workMembers = [
-      (
-        'mem_1',
-        'خالد العتيبي',
-        120.0,
-        'غداء العمل الأخير',
-        'قبل يومين'
-      ), // خالد مدين لك بمبلغ 120
-      (
-        'mem_2',
-        'سارة الشمري',
-        -50.0,
-        'طلب القهوة الأسبوعي',
-        'أمس'
-      ), // أنت مدين لها بمبلغ 50
-      (
-        'mem_3',
-        'فهد الدوسري',
-        200.0,
-        'تذاكر ورشة التقنية',
-        '12 مايو'
-      ), // فهد مدين لك بمبلغ 200
-      (
-        'mem_4',
-        'أحمد ناصر',
-        0.0,
-        'تمت التسوية',
-        'الأسبوع الماضي'
-      ), // الحساب متوازن
+      ('mem_1', 'خالد العتيبي', 120.0, 'غداء العمل الأخير', 'قبل يومين', '+966501112233'),
+      ('mem_2', 'سارة الشمري', -50.0, 'طلب القهوة الأسبوعي', 'أمس', '+966504445566'),
+      ('mem_3', 'فهد الدوسري', 200.0, 'تذاكر ورشة التقنية', '12 مايو', '+966507778899'),
+      ('mem_4', 'أحمد ناصر', 0.0, 'تمت التسوية', 'الأسبوع الماضي', null),
     ];
-    for (final (id, name, balance, note, lastActivity) in workMembers) {
+    for (final (id, name, balance, note, lastActivity, phone) in workMembers) {
       await db.insert('group_members', {
         'id': id,
         'group_id': 'grp_work',
         'name': name,
         'avatar_url': null,
+        'phone_e164': phone,
+        'linked_user_id': null,
         'note': note,
         'last_activity': lastActivity,
         'updated_at': seededAt,
         'is_synced': 1,
+        'version': 1,
       });
       await _insertOpeningBalance(
         db,
@@ -565,16 +644,16 @@ class AppDatabase {
         balance: balance,
         at: seededAt,
         synced: true,
+        currentUserId: demoUserId,
       );
     }
 
-    // Seed shared expense and splits corresponding to tx_1
     await db.insert('group_expenses', {
       'id': 'exp_danube_1',
       'group_id': 'grp_work',
       'title': 'سوبرماركت الدانوب',
       'total_amount': 340.0,
-      'payer_id': 'user_me',
+      'payer_id': demoUserId,
       'payer_name': 'أنت',
       'category': 'بقالة وتموين',
       'split_method': 'equal',
@@ -583,17 +662,19 @@ class AppDatabase {
           .toIso8601String(),
       'updated_at': seededAt,
       'is_synced': 1,
+      'version': 1,
     });
     await db.insert('expense_splits', {
-      'id': 'exp_danube_1:user_me',
+      'id': 'exp_danube_1:$demoUserId',
       'expense_id': 'exp_danube_1',
       'group_id': 'grp_work',
-      'member_id': 'user_me',
+      'member_id': demoUserId,
       'amount': 113.34,
       'percentage': 33.34,
       'is_payer': 1,
       'updated_at': seededAt,
       'is_synced': 1,
+      'version': 1,
     });
     await db.insert('expense_splits', {
       'id': 'exp_danube_1:mem_1',
@@ -605,6 +686,7 @@ class AppDatabase {
       'is_payer': 0,
       'updated_at': seededAt,
       'is_synced': 1,
+      'version': 1,
     });
     await db.insert('expense_splits', {
       'id': 'exp_danube_1:mem_2',
@@ -616,6 +698,7 @@ class AppDatabase {
       'is_payer': 0,
       'updated_at': seededAt,
       'is_synced': 1,
+      'version': 1,
     });
   }
 }

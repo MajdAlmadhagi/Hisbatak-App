@@ -11,6 +11,7 @@ import '../../bloc/budget/budget_bloc.dart';
 import '../../widgets/transaction_details_dialog.dart';
 import '../../widgets/hisbatak_loader.dart';
 import '../../widgets/transaction_list_tile.dart';
+import '../../widgets/profile_currency_extension.dart';
 
 /// [AllTransactionsScreen] displays the full transaction history with live search,
 /// category filtering, type filtering (Income vs Expense), and financial summary totals.
@@ -203,6 +204,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
             }
           }
           final netBalance = totalIncome - totalExpenses;
+          final activeCurrency = context.watchCurrencySymbol();
 
           return RefreshIndicator(
             color: AppColors.emerald,
@@ -222,7 +224,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                       //border: Border.all(color: context.appBorder),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 10,
                           offset: const Offset(0, 2),
                         )
@@ -242,7 +244,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              '+${Formatters.formatCurrency(totalIncome)}',
+                              '+${Formatters.formatCurrency(totalIncome, currencySymbol: activeCurrency)}',
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,
@@ -271,7 +273,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                '-${Formatters.formatCurrency(totalExpenses)}',
+                                '-${Formatters.formatCurrency(totalExpenses, currencySymbol: activeCurrency)}',
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.bold,
@@ -299,7 +301,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                             const SizedBox(height: 4),
                             Text(
                               (netBalance >= 0 ? '+' : '') +
-                                  Formatters.formatCurrency(netBalance),
+                                  Formatters.formatCurrency(netBalance, currencySymbol: activeCurrency),
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,

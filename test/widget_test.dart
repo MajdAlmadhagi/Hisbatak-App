@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hisbatak_app/domain/entities/expense_split_entity.dart';
 import 'package:hisbatak_app/core/utils/formatters.dart';
+import 'package:hisbatak_app/domain/entities/expense_split_entity.dart';
 
 void main() {
   group('Hisbatak Clean Architecture & Strategy Tests', () {
@@ -8,13 +8,13 @@ void main() {
       final strategy = EqualSplitStrategy();
       final splits = strategy.calculateSplits(
         totalAmount: 240.0,
-        memberIds: ['user_me', 'mem_1', 'mem_2'],
+        memberIds: ['user_uuid', 'mem_1', 'mem_2'],
         memberNames: {
-          'user_me': 'أنت (الدافع)',
+          'user_uuid': 'أنت (الدافع)',
           'mem_1': 'خالد العتيبي',
           'mem_2': 'سارة المقرن',
         },
-        payerId: 'user_me',
+        payerId: 'user_uuid',
       );
 
       expect(splits.length, 3);
@@ -24,6 +24,9 @@ void main() {
       expect(splits[1].isPayer, false);
       expect(splits[2].amount, 80.0);
       expect(splits[2].isPayer, false);
+
+      final totalSplit = splits.fold<double>(0.0, (s, e) => s + e.amount);
+      expect(totalSplit, closeTo(240.0, 0.01));
     });
 
     test('PercentageSplitStrategy should split based on custom percentages', () {
@@ -39,6 +42,8 @@ void main() {
       expect(splits.length, 2);
       expect(splits[0].amount, 600.0);
       expect(splits[1].amount, 400.0);
+      expect(splits[0].isPayer, isTrue);
+      expect(splits[1].isPayer, isFalse);
     });
 
     test('CustomAmountSplitStrategy should assign exact custom amounts', () {
@@ -60,6 +65,29 @@ void main() {
       expect(splits[2].percentage, 20.0);
     });
 
+    test(
+        'EqualSplitStrategy handles third-party payer where current user owes share',
+        () {
+      final strategy = EqualSplitStrategy();
+      final splits = strategy.calculateSplits(
+        totalAmount: 300.0,
+        memberIds: ['user_uuid', 'friend_1', 'friend_2'],
+        memberNames: {
+          'user_uuid': 'أنت',
+          'friend_1': 'طارق',
+          'friend_2': 'ماجد',
+        },
+        payerId: 'friend_1',
+      );
+
+      final userSplit = splits.firstWhere((s) => s.memberId == 'user_uuid');
+      final payerSplit = splits.firstWhere((s) => s.memberId == 'friend_1');
+
+      expect(userSplit.isPayer, isFalse);
+      expect(userSplit.amount, closeTo(100.0, 0.01));
+      expect(payerSplit.isPayer, isTrue);
+      expect(payerSplit.amount, closeTo(100.0, 0.01));
+    });
 
     test('Formatters should format currency correctly with Arabic symbols', () {
       expect(Formatters.formatCurrency(14850.0), '14,850 ر.س');

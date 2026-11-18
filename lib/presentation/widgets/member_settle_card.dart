@@ -5,18 +5,21 @@ import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
 import '../../domain/entities/group_entity.dart';
+import 'profile_currency_extension.dart';
 
-/// [MemberSettleCard] renders individual group member settlement cards matching Screen 3.
+/// [MemberSettleCard] renders individual group member settlement cards.
 ///
 /// SOLID Principle: Single Responsibility Principle (SRP)
 class MemberSettleCard extends StatelessWidget {
   final GroupMemberEntity member;
   final VoidCallback? onSettle;
+  final String? currencySymbol;
 
   const MemberSettleCard({
     super.key,
     required this.member,
     this.onSettle,
+    this.currencySymbol,
   });
 
   @override
@@ -25,6 +28,7 @@ class MemberSettleCard extends StatelessWidget {
     final userOwes = member.userOwes;
     final isBalanced = member.isBalanced;
     final isDark = context.isDarkMode;
+    final activeCurrency = currencySymbol ?? context.watchCurrencySymbol();
 
     Color badgeBg;
     Color badgeText;
@@ -65,8 +69,9 @@ class MemberSettleCard extends StatelessWidget {
                 child: Text(
                   member.name.isNotEmpty ? member.name[0] : '?',
                   style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: context.appTextPrimary),
+                    fontWeight: FontWeight.bold,
+                    color: context.appTextPrimary,
+                  ),
                 ),
               ),
               Positioned(
@@ -81,9 +86,9 @@ class MemberSettleCard extends StatelessWidget {
                         : (userOwes ? AppColors.expense : AppColors.outline),
                     shape: BoxShape.circle,
                     border: Border.all(
-                        color:
-                            isDark ? AppColors.cardDarkElevated : Colors.white,
-                        width: 2),
+                      color: isDark ? AppColors.cardDarkElevated : Colors.white,
+                      width: 2,
+                    ),
                   ),
                 ),
               ),
@@ -109,7 +114,9 @@ class MemberSettleCard extends StatelessWidget {
                     const SizedBox(width: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 1),
+                        horizontal: 6,
+                        vertical: 1,
+                      ),
                       decoration: BoxDecoration(
                         color: badgeBg,
                         borderRadius: BorderRadius.circular(6),
@@ -128,7 +135,7 @@ class MemberSettleCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 if (owesUser)
                   Text(
-                    '${AppStrings.heOwesYou} ${Formatters.formatCurrency(member.balance)}',
+                    '${AppStrings.heOwesYou} ${Formatters.formatCurrency(member.balance, currencySymbol: activeCurrency)}',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
@@ -138,7 +145,7 @@ class MemberSettleCard extends StatelessWidget {
                   )
                 else if (userOwes)
                   Text(
-                    '${AppStrings.youOweHer} ${Formatters.formatCurrency(member.balance.abs())}',
+                    '${AppStrings.youOweHer} ${Formatters.formatCurrency(member.balance.abs(), currencySymbol: activeCurrency)}',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
@@ -183,8 +190,11 @@ class MemberSettleCard extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Iconsax.money_change,
-                        size: 14, color: context.appTextPrimary),
+                    Icon(
+                      Iconsax.money_change,
+                      size: 14,
+                      color: context.appTextPrimary,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       AppStrings.settleAccount,

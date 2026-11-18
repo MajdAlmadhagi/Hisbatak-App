@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../domain/entities/auth_session.dart';
+import '../../../domain/repositories/i_auth_repository.dart';
 import '../../../domain/usecases/auth/auth_usecases.dart';
 import 'auth_event.dart';
 import 'auth_state.dart';
@@ -8,7 +9,7 @@ import 'auth_state.dart';
 ///
 /// SOLID Principles:
 /// - Single Responsibility Principle (SRP): Manages auth presentation state only.
-/// - Dependency Inversion Principle (DIP): Relies on pure domain use cases.
+/// - Dependency Inversion Principle (DIP): Relies on pure domain use cases and contracts.
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final LoginUseCase loginUseCase;
   final SignupUseCase signupUseCase;
@@ -16,6 +17,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final GetPreferredModeUseCase getPreferredModeUseCase;
   final SetPreferredModeUseCase setPreferredModeUseCase;
   final LogoutUseCase logoutUseCase;
+  final ICloudAuthRepository? cloudAuthRepository;
 
   AuthBloc({
     required this.loginUseCase,
@@ -24,12 +26,17 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     required this.getPreferredModeUseCase,
     required this.setPreferredModeUseCase,
     required this.logoutUseCase,
+    this.cloudAuthRepository,
   }) : super(const AuthState()) {
     on<CheckAuthStatusEvent>(_onCheckAuthStatus);
     on<SwitchConnectionModeEvent>(_onSwitchConnectionMode);
     on<LoginSubmittedEvent>(_onLoginSubmitted);
     on<QuickOfflineAccessEvent>(_onQuickOfflineAccess);
     on<SignupSubmittedEvent>(_onSignupSubmitted);
+    on<RequestPhoneOtpEvent>(_onRequestPhoneOtp);
+    on<VerifyPhoneOtpEvent>(_onVerifyPhoneOtp);
+    on<SocialSignInEvent>(_onSocialSignIn);
+    on<LinkCloudAccountEvent>(_onLinkCloudAccount);
     on<ClearAuthErrorEvent>(_onClearError);
     on<LogoutAuthEvent>(_onLogout);
   }
@@ -92,6 +99,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       emit(state.copyWith(
         status: AuthStatus.authenticated,
         session: session,
+        clearOtpChallenge: true,
         successMessage: state.connectionMode == AuthConnectionMode.offline
             ? 'تم الدخول في وضع عدم الاتصال بنجاح'
             : 'تم تسجيل الدخول السحابي بنجاح',
@@ -125,6 +133,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       emit(state.copyWith(
         status: AuthStatus.authenticated,
         session: session,
+        clearOtpChallenge: true,
         successMessage: 'تم الدخول السريع في وضع الأوفلاين ⚡',
       ));
     } catch (e) {
@@ -152,9 +161,174 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       emit(state.copyWith(
         status: AuthStatus.authenticated,
         session: session,
+        clearOtpChallenge: true,
         successMessage: state.connectionMode == AuthConnectionMode.offline
             ? 'تم إنشاء الخزينة المحلية بنجاح'
             : 'تم إنشاء حسابك السحابي بنجاح',
+      ));
+    } catch (e) {
+      emit(state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: e.toString().replaceAll('Exception: ', ''),
+      ));
+    }
+  }
+
+  Future<void> _onRequestPhoneOtp(
+    RequestPhoneOtpEvent event,
+    Emitter<AuthState> emit,
+  ) async {
+    final repo = cloudAuthRepository;
+    if (repo == null) {
+      emit(state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: 'خدمة التحقق السحابي غير مهيأة حالياً.',
+      ));
+      return;
+    }
+
+    emit(state.copyWith(
+      status: AuthStatus.loading,
+      connectionMode: AuthConnectionMode.online,
+      clearError: true,
+      clearSuccess: true,
+    ));
+
+    try {
+      final challenge = await repo.requestPhoneOtp(phoneE164: event.phoneNumber);
+      emit(state.copyWith(
+        status: AuthStatus.otpSent,
+        connectionMode: AuthConnectionMode.online,
+        pendingPhoneE164: challenge.phoneE164,
+        otpChallengeId: challenge.challengeId,
+        devOtpPreviewCode: challenge.previewCode,
+        successMessage: challenge.previewCode != null
+            ? 'تم إرسال رمز التحقق (الوضع التجريبي: ${challenge.previewCode})'
+            : 'تم إرسال رمز التحقق إلى ${challenge.phoneE164}',
+      ));
+    } catch (e) {
+      emit(state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: e.toString().replaceAll('Exception: ', ''),
+      ));
+    }
+  }
+
+  Future<void> _onVerifyPhoneOtp(
+    VerifyPhoneOtpEvent event,
+    Emitter<AuthState> emit,
+  ) async {
+    final repo = cloudAuthRepository;
+    if (repo == null) {
+      emit(state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: 'خدمة التحقق السحابي غير مهيأة حالياً.',
+      ));
+      return;
+    }
+
+    emit(state.copyWith(
+      status: AuthStatus.loading,
+      connectionMode: AuthConnectionMode.online,
+      clearError: true,
+    ));
+
+    try {
+      final session = await repo.verifyPhoneOtp(
+        phoneE164: event.phoneNumber,
+        code: event.code,
+        challengeId: event.challengeId ?? state.otpChallengeId,
+        guestUserId: state.session?.userId,
+      );
+      emit(state.copyWith(
+        status: AuthStatus.authenticated,
+        connectionMode: AuthConnectionMode.online,
+        session: session,
+        clearOtpChallenge: true,
+        successMessage: 'تم تسجيل الدخول السحابي برقم الهاتف ✓',
+      ));
+    } catch (e) {
+      emit(state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: e.toString().replaceAll('Exception: ', ''),
+      ));
+    }
+  }
+
+  Future<void> _onSocialSignIn(
+    SocialSignInEvent event,
+    Emitter<AuthState> emit,
+  ) async {
+    final repo = cloudAuthRepository;
+    if (repo == null) {
+      emit(state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: 'تسجيل الدخول السحابي غير مهيأ حالياً.',
+      ));
+      return;
+    }
+
+    emit(state.copyWith(
+      status: AuthStatus.loading,
+      connectionMode: AuthConnectionMode.online,
+      clearError: true,
+    ));
+
+    try {
+      final session = await repo.signInWithSocial(
+        provider: event.provider,
+        idToken: event.idToken,
+        email: event.email,
+        displayName: event.displayName,
+        guestUserId: state.session?.userId,
+      );
+      emit(state.copyWith(
+        status: AuthStatus.authenticated,
+        connectionMode: AuthConnectionMode.online,
+        session: session,
+        clearOtpChallenge: true,
+        successMessage: 'تم ربط الحساب السحابي بنجاح ✓',
+      ));
+    } catch (e) {
+      emit(state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: e.toString().replaceAll('Exception: ', ''),
+      ));
+    }
+  }
+
+  Future<void> _onLinkCloudAccount(
+    LinkCloudAccountEvent event,
+    Emitter<AuthState> emit,
+  ) async {
+    final repo = cloudAuthRepository;
+    if (repo == null) {
+      emit(state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: 'خدمة ربط الحساب السحابي غير مهيأة حالياً.',
+      ));
+      return;
+    }
+
+    emit(state.copyWith(
+      status: AuthStatus.loading,
+      connectionMode: AuthConnectionMode.online,
+      clearError: true,
+    ));
+
+    try {
+      final session = await repo.claimGuestAccount(
+        guestUserId: state.session?.userId ?? '',
+        phoneE164: event.phoneNumber,
+        otpCode: event.code,
+        challengeId: event.challengeId ?? state.otpChallengeId,
+      );
+      emit(state.copyWith(
+        status: AuthStatus.authenticated,
+        connectionMode: AuthConnectionMode.online,
+        session: session,
+        clearOtpChallenge: true,
+        successMessage: 'تم ربط محفظتك المحلية بالسحابة بنجاح ✓',
       ));
     } catch (e) {
       emit(state.copyWith(
@@ -181,6 +355,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       session: null,
       clearError: true,
       clearSuccess: true,
+      clearOtpChallenge: true,
     ));
   }
 }

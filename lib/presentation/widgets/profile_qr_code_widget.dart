@@ -1,16 +1,15 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/qr_matrix_generator.dart';
 import '../../domain/entities/user_profile.dart';
+import 'hisbatak_mark.dart';
 
 /// [ProfileQrCodeButton] renders a sleek, modern fintech QR code button
 /// placed beside the user profile card. Tapping it opens the interactive
 /// QR code bottom sheet.
-///
-/// SOLID Principle: Single Responsibility Principle (SRP)
 class ProfileQrCodeButton extends StatelessWidget {
   final UserProfile? profile;
   final VoidCallback? onTap;
@@ -34,11 +33,11 @@ class ProfileQrCodeButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = context.isDarkMode;
-    final btnWidth = width ?? (showLabel ? 66.0 : size);
-    final btnHeight = height ?? (showLabel ? 66.0 : size);
+    final btnWidth = width ?? (showLabel ? 78.0 : size);
+    final btnHeight = height ?? (showLabel ? 70.0 : size);
 
     return Tooltip(
-      message: 'رمز QR للمحفظة المحلية',
+      message: 'رمز QR للهوية والمشاركة',
       child: Material(
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(16),
@@ -83,25 +82,28 @@ class ProfileQrCodeButton extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
-              //mainAxisSize: MainAxisSize.min,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
                   Iconsax.scan_barcode,
                   color: isDark ? AppColors.mintContainer : AppColors.emerald,
-                  size: showLabel ? 36 : 32,
+                  size: showLabel ? 26 : 30,
                 ),
                 if (showLabel) ...[
-                  const SizedBox(height: 3),
-                  Text(
-                    label,
-                    //maxLines: 1,
-                    //overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color:
-                          isDark ? AppColors.mintContainer : AppColors.emerald,
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
+                  const SizedBox(height: 2),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      softWrap: false,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color:
+                            isDark ? AppColors.mintContainer : AppColors.emerald,
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
@@ -114,18 +116,28 @@ class ProfileQrCodeButton extends StatelessWidget {
   }
 }
 
-/// Displays an interactive modal bottom sheet presenting the user's
-/// offline-first QR code with share and copy capabilities.
+/// Displays an interactive modal bottom sheet presenting a real ISO/IEC 18004
+/// scannable QR code carrying the user's `hisbatak://u/<uuid>` identity URI.
 void showProfileQrBottomSheet(
   BuildContext context, {
   UserProfile? profile,
 }) {
   final isDark = context.isDarkMode;
-  final name = profile?.fullName ?? 'مستخدم حِسبَتك';
-  final email = profile?.email ?? 'user@hisbatak.local';
+  final name = profile?.fullName.trim().isNotEmpty == true
+      ? profile!.fullName.trim()
+      : 'مستخدم حِسبَتك';
+  final phone = profile?.phoneE164?.trim();
+  final subtitle = phone != null && phone.isNotEmpty
+      ? phone
+      : (profile?.email.trim().isNotEmpty == true
+          ? profile!.email
+          : 'حساب محلي مستقل');
   final walletId = profile?.id.isNotEmpty == true
       ? profile!.id
       : 'HIS-${(name.hashCode.abs() % 90000 + 10000)}';
+  final qrPayload = phone != null && phone.isNotEmpty
+      ? 'hisbatak://u/$walletId?p=${Uri.encodeComponent(phone)}'
+      : 'hisbatak://u/$walletId';
 
   showModalBottomSheet(
     context: context,
@@ -144,7 +156,6 @@ void showProfileQrBottomSheet(
         child: ListView(
           controller: scrollController,
           children: [
-            // Top drag handle
             Center(
               child: Container(
                 width: 44,
@@ -156,8 +167,6 @@ void showProfileQrBottomSheet(
                 ),
               ),
             ),
-
-            // Header
             Row(
               children: [
                 Container(
@@ -180,7 +189,7 @@ void showProfileQrBottomSheet(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'رمز QR للمحفظة المحلية',
+                        'بطاقة الهوية والـ QR الرقمية',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -188,7 +197,7 @@ void showProfileQrBottomSheet(
                         ),
                       ),
                       Text(
-                        'امسح الرمز لتسوية وتقسيم المصاريف فورياً',
+                        'امسح الرمز لإضافة الصديق وتوحيد حسابه عبر المجموعات',
                         style: TextStyle(
                           fontSize: 11.5,
                           color: context.appTextSecondary,
@@ -200,11 +209,9 @@ void showProfileQrBottomSheet(
               ],
             ),
             const SizedBox(height: 20),
-
-            // Center QR Card with glow
             Center(
               child: Container(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(24),
@@ -224,24 +231,23 @@ void showProfileQrBottomSheet(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // QR Painter with embedded logo
                     SizedBox(
-                      width: 180,
-                      height: 180,
+                      width: 196,
+                      height: 196,
                       child: CustomPaint(
                         painter: HisbatakQrCodePainter(
-                          data:
-                              'hisbatak://pay?id=$walletId&user=${Uri.encodeComponent(name)}',
+                          data: qrPayload,
                           foregroundColor: const Color(0xFF0F172A),
                           accentColor: AppColors.emerald,
                         ),
                       ),
                     ),
                     const SizedBox(height: 14),
-                    // Offline tag inside card
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.mintSoft,
                         borderRadius: BorderRadius.circular(20),
@@ -250,11 +256,14 @@ void showProfileQrBottomSheet(
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Iconsax.cloud_cross,
-                              size: 12, color: AppColors.emerald),
+                          Icon(
+                            Iconsax.shield_tick,
+                            size: 12,
+                            color: AppColors.emerald,
+                          ),
                           SizedBox(width: 4),
                           Text(
-                            'تفاعل محلي 100% بدون إنترنت',
+                            'رمز قياسي ISO • جاهز للمسح الفوري',
                             style: TextStyle(
                               fontSize: 10.5,
                               fontWeight: FontWeight.bold,
@@ -269,8 +278,6 @@ void showProfileQrBottomSheet(
               ),
             ),
             const SizedBox(height: 20),
-
-            // User Info & Wallet ID Tile
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
@@ -307,37 +314,47 @@ void showProfileQrBottomSheet(
                           ),
                         ),
                         Text(
-                          email,
+                          subtitle,
+                          textDirection: phone != null && phone.isNotEmpty
+                              ? TextDirection.ltr
+                              : null,
                           style: TextStyle(
                             fontSize: 11,
                             color: context.appTextSecondary,
                           ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
                   ),
-                  // Wallet ID Badge
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? AppColors.emerald.withValues(alpha: 0.15)
-                          : AppColors.mintSoft,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: isDark
-                            ? AppColors.emerald.withValues(alpha: 0.3)
-                            : AppColors.mintContainer,
+                  const SizedBox(width: 8),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 118),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
                       ),
-                    ),
-                    child: Text(
-                      walletId,
-                      style: const TextStyle(
-                        fontFamily: 'monospace',
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.emerald,
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? AppColors.emerald.withValues(alpha: 0.15)
+                            : AppColors.mintSoft,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: isDark
+                              ? AppColors.emerald.withValues(alpha: 0.3)
+                              : AppColors.mintContainer,
+                        ),
+                      ),
+                      child: Text(
+                        walletId,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.emerald,
+                        ),
                       ),
                     ),
                   ),
@@ -345,8 +362,6 @@ void showProfileQrBottomSheet(
               ),
             ),
             const SizedBox(height: 18),
-
-            // Action Buttons (Copy & Share)
             Row(
               children: [
                 Expanded(
@@ -369,12 +384,16 @@ void showProfileQrBottomSheet(
                             borderRadius: BorderRadius.circular(10),
                           ),
                           content: Text(
-                              'تم نسخ معرّف المحفظة ($walletId) بنجاح! 📋'),
+                            'تم نسخ معرّف الحساب بنجاح! 📋',
+                          ),
                         ),
                       );
                     },
-                    icon: const Icon(Iconsax.copy,
-                        size: 16, color: AppColors.emerald),
+                    icon: const Icon(
+                      Iconsax.copy,
+                      size: 16,
+                      color: AppColors.emerald,
+                    ),
                     label: Text(
                       'نسخ المعرف',
                       style: TextStyle(
@@ -399,22 +418,26 @@ void showProfileQrBottomSheet(
                     ),
                     onPressed: () {
                       final shareData =
-                          '💳 معرّف محفظة حِسبَتك: $walletId\n👤 الاسم: $name\n🔒 تسوية وتقسيم مصاريف فوري محلي 100%';
+                          '💳 معرّف حِسبَتك: $qrPayload\n👤 الاسم: $name${phone != null ? '\n📱 الهاتف: $phone' : ''}';
                       Clipboard.setData(ClipboardData(text: shareData));
                       Navigator.of(ctx).pop();
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           backgroundColor: AppColors.primary,
                           behavior: SnackBarBehavior.floating,
-                          content:
-                              Text('تم تجهيز ونسخ بيانات المشاركة بنجاح! ✨'),
+                          content: Text(
+                            'تم نسخ رابط وبطاقة الهوية للمشاركة! ✨',
+                          ),
                         ),
                       );
                     },
-                    icon: const Icon(Iconsax.share,
-                        size: 16, color: Colors.white),
+                    icon: const Icon(
+                      Iconsax.share,
+                      size: 16,
+                      color: Colors.white,
+                    ),
                     label: const Text(
-                      'مشاركة الرمز',
+                      'نسخ رابط الهوية',
                       style: TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.bold,
@@ -433,23 +456,36 @@ void showProfileQrBottomSheet(
   );
 }
 
-/// [HisbatakQrCodePainter] renders a crisp, high-fidelity QR Code matrix
-/// with rounded corner finder patterns and a centered Hisbatak brand mark.
+/// [HisbatakQrCodePainter] renders an ISO/IEC 18004 scannable QR Code matrix
+/// generated via [QrMatrixGenerator] with rounded corner finder eyes and the
+/// Hisbatak "ح" emblem embedded inside the ECC-safe central badge.
 class HisbatakQrCodePainter extends CustomPainter {
   final String data;
   final Color foregroundColor;
   final Color accentColor;
+  final List<List<bool>> _matrix;
 
-  const HisbatakQrCodePainter({
+  HisbatakQrCodePainter({
     required this.data,
     this.foregroundColor = const Color(0xFF0F172A),
     this.accentColor = const Color(0xFF006C49),
-  });
+  }) : _matrix = QrMatrixGenerator.generate(
+          data,
+          errorCorrection: QrErrorCorrectionLevel.high,
+        );
+
+  /// Exposes the underlying generated matrix for verification and testing.
+  List<List<bool>> get matrix => _matrix;
 
   @override
   void paint(Canvas canvas, Size size) {
-    const int gridSize = 25; // Standard Version 2/3 QR Grid
-    final double cellSize = size.width / gridSize;
+    final int gridSize = _matrix.length;
+    if (gridSize == 0) return;
+
+    // 1-module quiet zone around the ISO matrix so edge contrast stays crisp.
+    final int totalGrid = gridSize + 2;
+    final double cellSize = size.width / totalGrid;
+    final double origin = cellSize;
 
     final darkPaint = Paint()
       ..color = foregroundColor
@@ -459,127 +495,115 @@ class HisbatakQrCodePainter extends CustomPainter {
       ..color = accentColor
       ..style = PaintingStyle.fill;
 
-    // Seeded random based on data string for deterministic aesthetic pattern
-    final random = Random(data.hashCode);
-
-    // 1. Draw Finder Pattern helper
-    void drawFinderPattern(double startX, double startY) {
-      // Outer 7x7 rounded rect
-      final outerRRect = RRect.fromRectAndRadius(
-        Rect.fromLTWH(startX, startY, cellSize * 7, cellSize * 7),
-        Radius.circular(cellSize * 1.5),
-      );
-      canvas.drawRRect(outerRRect, accentPaint);
-
-      // Inner 5x5 cutout
-      final innerCutoutRRect = RRect.fromRectAndRadius(
-        Rect.fromLTWH(
-          startX + cellSize,
-          startY + cellSize,
-          cellSize * 5,
-          cellSize * 5,
+    void drawFinderEye(double startX, double startY) {
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(startX, startY, cellSize * 7, cellSize * 7),
+          Radius.circular(cellSize * 1.4),
         ),
-        Radius.circular(cellSize),
+        accentPaint,
       );
       canvas.drawRRect(
-        innerCutoutRRect,
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(
+            startX + cellSize,
+            startY + cellSize,
+            cellSize * 5,
+            cellSize * 5,
+          ),
+          Radius.circular(cellSize * 0.9),
+        ),
         Paint()..color = Colors.white,
       );
-
-      // Center 3x3 solid block
-      final centerRRect = RRect.fromRectAndRadius(
-        Rect.fromLTWH(
-          startX + cellSize * 2,
-          startY + cellSize * 2,
-          cellSize * 3,
-          cellSize * 3,
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(
+            startX + cellSize * 2,
+            startY + cellSize * 2,
+            cellSize * 3,
+            cellSize * 3,
+          ),
+          Radius.circular(cellSize * 0.7),
         ),
-        Radius.circular(cellSize * 0.8),
+        accentPaint,
       );
-      canvas.drawRRect(centerRRect, accentPaint);
     }
 
-    // Top-Left Finder
-    drawFinderPattern(0, 0);
+    drawFinderEye(origin, origin);
+    drawFinderEye(origin + cellSize * (gridSize - 7), origin);
+    drawFinderEye(origin, origin + cellSize * (gridSize - 7));
 
-    // Top-Right Finder
-    drawFinderPattern(size.width - cellSize * 7, 0);
+    // Keep central ~7x7 area clear for the ECC-protected emblem badge.
+    final int mid = gridSize ~/ 2;
+    const int centerHalfSpan = 3;
 
-    // Bottom-Left Finder
-    drawFinderPattern(0, size.height - cellSize * 7);
-
-    // 2. Draw Data Modules and Timing Patterns
     for (int row = 0; row < gridSize; row++) {
       for (int col = 0; col < gridSize; col++) {
-        // Skip Top-Left Finder
-        if (row < 8 && col < 8) continue;
-        // Skip Top-Right Finder
-        if (row < 8 && col >= gridSize - 8) continue;
-        // Skip Bottom-Left Finder
-        if (row >= gridSize - 8 && col < 8) continue;
+        // Skip the 3 finder regions (7x7) drawn cleanly above.
+        if (row < 7 && col < 7) continue;
+        if (row < 7 && col >= gridSize - 7) continue;
+        if (row >= gridSize - 7 && col < 7) continue;
 
-        // Skip Center Logo Area (9x9 around middle)
-        if (row >= 9 && row <= 15 && col >= 9 && col <= 15) continue;
-
-        // Timing Pattern Lines
-        bool isTiming = (row == 6 || col == 6);
-        bool shouldDraw = false;
-
-        if (isTiming) {
-          shouldDraw = (row % 2 == 0) || (col % 2 == 0);
-        } else {
-          // Pseudorandom data fill based on payload hash
-          shouldDraw = random.nextBool();
+        if ((row - mid).abs() <= centerHalfSpan &&
+            (col - mid).abs() <= centerHalfSpan) {
+          continue;
         }
 
-        if (shouldDraw) {
-          final double x = col * cellSize;
-          final double y = row * cellSize;
-
-          final dotRRect = RRect.fromRectAndRadius(
-            Rect.fromLTWH(
-              x + cellSize * 0.1,
-              y + cellSize * 0.1,
-              cellSize * 0.8,
-              cellSize * 0.8,
+        if (_matrix[row][col]) {
+          final double x = origin + col * cellSize;
+          final double y = origin + row * cellSize;
+          canvas.drawRRect(
+            RRect.fromRectAndRadius(
+              Rect.fromLTWH(
+                x + cellSize * 0.08,
+                y + cellSize * 0.08,
+                cellSize * 0.84,
+                cellSize * 0.84,
+              ),
+              Radius.circular(cellSize * 0.24),
             ),
-            Radius.circular(cellSize * 0.3),
+            darkPaint,
           );
-
-          canvas.drawRRect(dotRRect, darkPaint);
         }
       }
     }
 
-    // 3. Center Brand Badge
-    final centerAreaSize = cellSize * 6.5;
-    final centerOffset = (size.width - centerAreaSize) / 2;
+    // Center white halo + navy squircle + crisp "ح" brand mark
+    final double badgeSize = cellSize * 7.2;
+    final double badgeOffset = (size.width - badgeSize) / 2;
 
-    // White badge background
-    final badgeRRect = RRect.fromRectAndRadius(
-      Rect.fromLTWH(centerOffset, centerOffset, centerAreaSize, centerAreaSize),
-      Radius.circular(centerAreaSize * 0.26),
-    );
     canvas.drawRRect(
-      badgeRRect,
-      Paint()
-        ..color = Colors.white
-        ..style = PaintingStyle.fill,
-    );
-
-    // Navy tile
-    final navyTileRRect = RRect.fromRectAndRadius(
-      Rect.fromLTWH(
-        centerOffset + cellSize * 0.5,
-        centerOffset + cellSize * 0.5,
-        centerAreaSize - cellSize,
-        centerAreaSize - cellSize,
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(badgeOffset, badgeOffset, badgeSize, badgeSize),
+        Radius.circular(badgeSize * 0.26),
       ),
-      Radius.circular(centerAreaSize * 0.22),
+      Paint()..color = Colors.white,
+    );
+
+    final double innerMargin = cellSize * 0.6;
+    final Rect navyRect = Rect.fromLTWH(
+      badgeOffset + innerMargin,
+      badgeOffset + innerMargin,
+      badgeSize - innerMargin * 2,
+      badgeSize - innerMargin * 2,
     );
     canvas.drawRRect(
-      navyTileRRect,
+      RRect.fromRectAndRadius(navyRect, Radius.circular(badgeSize * 0.22)),
       Paint()..color = AppColors.brandNavy,
+    );
+
+    final double markPad = navyRect.width * 0.22;
+    final Rect markRect = Rect.fromLTWH(
+      navyRect.left + markPad,
+      navyRect.top + markPad,
+      navyRect.width - markPad * 2,
+      navyRect.height - markPad * 2,
+    );
+    HisbatakMarkPainter.paintMark(
+      canvas,
+      markRect,
+      color: Colors.white,
+      accentColor: AppColors.brandGreen,
     );
   }
 

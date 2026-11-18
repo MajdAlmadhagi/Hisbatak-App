@@ -51,19 +51,25 @@ class HisbatakApp extends StatelessWidget {
           create: (_) => di.sl<ThemeCubit>(),
         ),
       ],
-      child: Builder(
-        //using builder to get the context
-        builder: (context) {
-          final isDark = context.read<ThemeCubit>().state == ThemeMode.dark;
+      child: BlocBuilder<ThemeCubit, ThemeMode>(
+        builder: (context, themeMode) {
+          final platformBrightness = MediaQuery.platformBrightnessOf(context);
+          final isDark = themeMode == ThemeMode.dark ||
+              (themeMode == ThemeMode.system &&
+                  platformBrightness == Brightness.dark);
+          final resolvedTheme =
+              isDark ? AppTheme.darkTheme : AppTheme.lightTheme;
           return ThemeProvider(
             //to create smooth theme animation during change theme
-            initTheme: isDark ? AppTheme.darkTheme : AppTheme.lightTheme,
+            initTheme: resolvedTheme,
             builder: (context, currentTheme) {
               return MaterialApp.router(
                 title: 'Hisbatak - حِسبَتك',
                 debugShowCheckedModeBanner: false,
-                theme: currentTheme,
-                routerConfig: AppRouter.router,//
+                theme: resolvedTheme,
+                darkTheme: AppTheme.darkTheme,
+                themeMode: themeMode,
+                routerConfig: AppRouter.router,
                 // Native Arabic RTL Support
                 locale: const Locale('ar', 'SA'),
                 supportedLocales: const [

@@ -54,10 +54,16 @@ class _Timing {
   (double, double) visibleAt(double t) {
     if (t < drawStart || t >= eraseEnd) return (0, 0);
     if (t < drawEnd) {
-      return (0, Curves.easeInOutCubic.transform((t - drawStart) / (drawEnd - drawStart)));
+      return (
+        0,
+        Curves.easeInOutCubic.transform((t - drawStart) / (drawEnd - drawStart)),
+      );
     }
     if (t < eraseStart) return (0, 1);
-    return (Curves.easeInOutCubic.transform((t - eraseStart) / (eraseEnd - eraseStart)), 1);
+    return (
+      Curves.easeInOutCubic.transform((t - eraseStart) / (eraseEnd - eraseStart)),
+      1,
+    );
   }
 }
 
@@ -65,8 +71,8 @@ class _Timing {
 /// animation, as the loader: the pieces draw in one after another, the green
 /// piece nudges outward, then they retract in the same order.
 ///
-/// The geometry is the same 1024-unit design grid as the launcher icon in
-/// assets, so the logo looks identical everywhere it appears.
+/// Uses rounded stroke caps and a clean gap between segments so the mark stays
+/// crisp and legible from 16px inline badges up to splash hero graphics.
 class HisbatakMarkPainter extends CustomPainter {
   final Color color;
   final Color accentColor;
@@ -87,7 +93,8 @@ class HisbatakMarkPainter extends CustomPainter {
   static const Rect _bounds = Rect.fromLTWH(275, 255, 436, 660);
   static double get aspectRatio => _bounds.width / _bounds.height;
   static const double _strokeWidth = 110;
-  static final Rect _bowl = Rect.fromCircle(center: const Offset(540, 650), radius: 210);
+  static final Rect _bowl =
+      Rect.fromCircle(center: const Offset(540, 650), radius: 210);
 
   static double _deg(double degrees) => degrees * math.pi / 180;
 
@@ -97,8 +104,10 @@ class HisbatakMarkPainter extends CustomPainter {
     ..lineTo(650, 310)
     ..lineTo(521.7, 440.8)
     ..arcTo(_bowl, _deg(-95), _deg(-25.5), false);
-  static final Path _bowlArc = Path()..addArc(_bowl, _deg(-129.5), _deg(-100.5));
-  static final Path _share = Path()..addArc(_bowl, _deg(-242), _deg(-68));
+  static final Path _bowlArc =
+      Path()..addArc(_bowl, _deg(-129.5), _deg(-100.5));
+  static final Path _share =
+      Path()..addArc(_bowl, _deg(-242), _deg(-68));
 
   static final PathMetric _headMetric = _head.computeMetrics().first;
   static final PathMetric _bowlMetric = _bowlArc.computeMetrics().first;
@@ -117,9 +126,49 @@ class HisbatakMarkPainter extends CustomPainter {
     return 1 - Curves.easeInOutCubic.transform((t - 0.56) / 0.10);
   }
 
+  /// Paints the static mark centered inside [targetRect] (reused by QR badge).
+  static void paintMark(
+    Canvas canvas,
+    Rect targetRect, {
+    required Color color,
+    Color accentColor = AppColors.brandGreen,
+  }) {
+    final scale = math.min(
+      targetRect.width / _bounds.width,
+      targetRect.height / _bounds.height,
+    );
+    canvas
+      ..save()
+      ..translate(
+        targetRect.left + (targetRect.width - _bounds.width * scale) / 2,
+        targetRect.top + (targetRect.height - _bounds.height * scale) / 2,
+      )
+      ..scale(scale)
+      ..translate(-_bounds.left, -_bounds.top);
+
+    final main = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = _strokeWidth
+      ..strokeJoin = StrokeJoin.round
+      ..color = color;
+    final accent = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = _strokeWidth
+      ..color = accentColor;
+
+    canvas
+      ..drawPath(_head, main)
+      ..drawPath(_bowlArc, main)
+      ..drawPath(_share, accent)
+      ..restore();
+  }
+
   @override
   void paint(Canvas canvas, Size size) {
-    final scale = math.min(size.width / _bounds.width, size.height / _bounds.height);
+    final scale = math.min(
+      size.width / _bounds.width,
+      size.height / _bounds.height,
+    );
     canvas
       ..save()
       ..translate(
@@ -174,10 +223,18 @@ class HisbatakMarkPainter extends CustomPainter {
       ..restore();
   }
 
-  void _drawPiece(Canvas canvas, PathMetric metric, (double, double) range, Paint paint) {
+  void _drawPiece(
+    Canvas canvas,
+    PathMetric metric,
+    (double, double) range,
+    Paint paint,
+  ) {
     final (start, end) = range;
     if (end <= start) return;
-    canvas.drawPath(metric.extractPath(start * metric.length, end * metric.length), paint);
+    canvas.drawPath(
+      metric.extractPath(start * metric.length, end * metric.length),
+      paint,
+    );
   }
 
   @override

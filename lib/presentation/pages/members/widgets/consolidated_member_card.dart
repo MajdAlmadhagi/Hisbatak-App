@@ -5,6 +5,7 @@ import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../domain/entities/group_entity.dart';
+import '../../../widgets/profile_currency_extension.dart';
 
 /// [ConsolidatedMemberCard] displays an individual member with their cross-group memberships,
 /// overall net balance, and an action button to add them to other groups.
@@ -58,6 +59,7 @@ class ConsolidatedMemberCard extends StatelessWidget {
     final availableGroups = member.availableGroups(allGroups);
     final canAddToMoreGroups = availableGroups.isNotEmpty;
     final primaryAvatarColor = _getAvatarGradientColor(member.name);
+    final activeCurrency = context.watchCurrencySymbol();
 
     Color badgeBg;
     Color badgeText;
@@ -191,9 +193,10 @@ class ConsolidatedMemberCard extends StatelessWidget {
                       children: [
                         Text(
                           isBalanced
-                              ? '0 ر.س'
+                              ? '0 $activeCurrency'
                               : Formatters.formatSignedCurrency(
-                                  member.totalBalance),
+                                  member.totalBalance,
+                                  currencySymbol: activeCurrency),
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
@@ -211,11 +214,6 @@ class ConsolidatedMemberCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(
-                    height: 20,
-                  ),
-                  Text('مزامنة المستخدم',
-                      style: TextStyle(fontWeight: FontWeight.bold))
                 ],
               ),
             ],
@@ -268,7 +266,7 @@ class ConsolidatedMemberCard extends StatelessWidget {
                     if (!m.isBalanced) ...[
                       const SizedBox(width: 4),
                       Text(
-                        '(${Formatters.formatSignedCurrency(m.balance)})',
+                        '(${Formatters.formatSignedCurrency(m.balance, currencySymbol: activeCurrency)})',
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.bold,

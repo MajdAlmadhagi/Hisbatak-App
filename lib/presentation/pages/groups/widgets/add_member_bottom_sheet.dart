@@ -4,6 +4,9 @@ import 'package:iconsax_flutter/iconsax_flutter.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/id_generator.dart';
+import '../../../../core/utils/validators.dart';
+import '../../../widgets/optional_phone_field.dart';
 import '../../../../domain/entities/group_entity.dart';
 import '../../../bloc/groups/groups_bloc.dart';
 
@@ -27,10 +30,12 @@ class AddMemberBottomSheet extends StatefulWidget {
 class _AddMemberBottomSheetState extends State<AddMemberBottomSheet> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
 
   @override
   void dispose() {
     _nameController.dispose();
+    _phoneController.dispose();
     super.dispose();
   }
 
@@ -38,10 +43,12 @@ class _AddMemberBottomSheetState extends State<AddMemberBottomSheet> {
     if (!_formKey.currentState!.validate()) return;
 
     final name = _nameController.text.trim();
+    final phoneE164 = Validators.tryNormalizePhoneE164(_phoneController.text);
     final newMember = GroupMemberEntity(
-      id: 'mem_${DateTime.now().millisecondsSinceEpoch}',
+      id: IdGenerator.prefixed('mem'),
       groupId: widget.groupId,
       name: name,
+      phoneE164: phoneE164,
       balance: 0.0,
       note: 'عضو جديد',
       lastActivity: 'الآن',
@@ -191,7 +198,13 @@ class _AddMemberBottomSheetState extends State<AddMemberBottomSheet> {
               },
               onFieldSubmitted: (_) => _submit(),
             ),
-            const SizedBox(height: 22),
+            const SizedBox(height: 14),
+            OptionalPhoneField(
+              controller: _phoneController,
+              fillColor: context.appCardBackground,
+              onSubmitted: (_) => _submit(),
+            ),
+            const SizedBox(height: 20),
 
             // Submit Button
             SizedBox(

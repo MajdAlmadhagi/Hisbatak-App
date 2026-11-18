@@ -7,7 +7,7 @@ class AppStrings {
   static const String appName = 'حِسبَتك';
   static const String appTagline = 'المحفظة الذكية وإدارة المصاريف بدون إنترنت';
   static const String appSubTagline = 'خصوصية تامة • مزامنة فورية عند الطلب';
-  static const String appVersion = 'النسخة السريعة 2.4';
+  static const String appVersion = 'الإصدار 1.0.0';
   static const String encryptedLocal = 'بياناتك مشفرة ومحفوظة محلياً 100% 🔒';
   static const String offlineReady = 'مستعد بدون اتصال';
   static const String offlineActive = 'وضع عدم الاتصال نشط';
@@ -274,10 +274,10 @@ class AppStrings {
   static const String mainCurrencySub = 'تعتمد لجميع العمليات والتقسيمات';
   static const String budgetAlerts = 'تنبيهات تجاوز الميزانية';
   static const String budgetAlertsSub = 'إشعارات صوتية واهتزازية فور تخطي 80%';
-  static const String fingerprint = 'إستخدام البصمة لتسجيل الدخول';
-  static const String fingerprintSub = 'بصمة اليد / الوجه';
+  static const String fingerprint = 'قفل التطبيق بالرمز السري / البصمة';
+  static const String fingerprintSub = 'حماية الوصول السريع محلياً بالرمز السري';
   static const String dataPrivacyManagement = 'إدارة البيانات والخصوصية';
-  static const String exportAllPdf = 'تصدير كافة البيانات كملف PDF';
+  static const String exportAllPdf = 'تصدير كشف الحساب (CSV)';
   static const String exportAllPdfSub =
       'كشف شامل للمصروفات، الفواتير، والمجموعات';
   static const String createBackup = 'إنشاء نسخة احتياطية محلية';
@@ -288,7 +288,7 @@ class AppStrings {
   static const String wipeDataSub =
       'حذف كامل السجلات والمجموعات من ذاكرة الجهاز';
   static const String totalPrivacyNote =
-      'تطبيق "حسبتك" يعمل بهندسة Offline-First، لا يتم إرسال بياناتك أو فواتيرك لأي خادم خارجي. مفاتيح التشفير تُخزن محلياً داخل مساح أمان جهازك.';
+      'تطبيق "حِسبَتك" يعمل بهندسة Offline-First؛ بياناتك تُحفظ محلياً داخل مساحة أمان جهازك، ولا تُرفع للسحابة إلا عند ربط حسابك وتفعيل المزامنة.';
 
   // Categories
   static const String catRestaurantsName = 'مطاعم ومقاهي';
@@ -331,7 +331,7 @@ class AppStrings {
   static const String aboutAppTitle = 'حول التطبيق';
   static const String aboutAppSubtitle =
       'المحفظة الذكية وإدارة المصاريف بدون إنترنت';
-  static const String appFullVersion = 'الإصدار 2.4.0 (Offline Build)';
+  static const String appFullVersion = 'الإصدار 1.0.0 (Offline-First)';
   static const String appReleaseDate = 'أكتوبر 2026';
   static const String offlineFirstBadge = '100% محلي وخاص';
   static const String zeroCloudBadge = 'بدون خوادم سحابية';

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:iconsax_flutter/iconsax_flutter.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/theme/app_theme.dart';
 
-/// [OfflineStatusPill] displays the offline active banner and security badge (matching Screen 1, 2, 3, 5).
+/// [OfflineStatusPill] displays the offline active banner and security badge.
 ///
 /// SOLID Principle: Single Responsibility Principle (SRP)
 class OfflineStatusPill extends StatelessWidget {
@@ -19,16 +19,24 @@ class OfflineStatusPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.isDarkMode;
+    final accent = isDark ? AppColors.mintContainer : AppColors.emerald;
+
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: isCompact ? 10 : 14,
         vertical: isCompact ? 5 : 8,
       ),
       decoration: BoxDecoration(
-        color: AppColors.mintSoft,
+        color: isDark
+            ? AppColors.emerald.withValues(alpha: 0.16)
+            : AppColors.mintSoft,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-            color: AppColors.mintContainer.withValues(alpha: 0.6), width: 1),
+          color: (isDark ? AppColors.emerald : AppColors.mintContainer)
+              .withValues(alpha: 0.6),
+          width: 1,
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -36,23 +44,23 @@ class OfflineStatusPill extends StatelessWidget {
           Container(
             width: 7,
             height: 7,
-            decoration: const BoxDecoration(
-              color: AppColors.emerald,
+            decoration: BoxDecoration(
+              color: accent,
               shape: BoxShape.circle,
             ),
           ),
           const SizedBox(width: 8),
           Text(
             text,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w700,
-              color: AppColors.emerald,
+              color: accent,
             ),
           ),
           if (icon != null) ...[
             const SizedBox(width: 4),
-            Icon(icon, size: 14, color: AppColors.emerald),
+            Icon(icon, size: 14, color: accent),
           ],
         ],
       ),
@@ -60,70 +68,120 @@ class OfflineStatusPill extends StatelessWidget {
   }
 }
 
-/// [OfflineTopBanner] displays the top card for Home screen: "وضع عدم الاتصال نشط - تمت المزامنة محلياً بنجاح (☁️✓)".
+/// [OfflineTopBanner] displays the connection & sync status banner for Home screen.
 class OfflineTopBanner extends StatelessWidget {
-  const OfflineTopBanner({super.key});
+  final bool isOnlineMode;
+  final int pendingSyncCount;
+  final VoidCallback? onSyncTap;
+
+  const OfflineTopBanner({
+    super.key,
+    this.isOnlineMode = false,
+    this.pendingSyncCount = 0,
+    this.onSyncTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFE8FDF3),
-        borderRadius: BorderRadius.circular(16),
-        border:
-            Border.all(color: const Color(0xFF6CF8BB).withValues(alpha: 0.5)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: const BoxDecoration(
-              color: Color(0xFF6CF8BB),
-              shape: BoxShape.circle,
+    final isDark = context.isDarkMode;
+    final bgColor = isDark
+        ? AppColors.cardDarkElevated
+        : const Color(0xFFE8FDF3);
+    final borderColor = isDark
+        ? AppColors.emerald.withValues(alpha: 0.35)
+        : const Color(0xFF6CF8BB).withValues(alpha: 0.5);
+    final titleColor = isDark ? AppColors.mintContainer : AppColors.emerald;
+    final subtitleColor =
+        isDark ? context.appTextSecondary : const Color(0xFF005236);
+    final badgeBg = isDark ? AppColors.cardDark : Colors.white;
+
+    final String titleText;
+    final String subtitleText;
+    final String badgeText;
+
+    if (isOnlineMode && pendingSyncCount > 0) {
+      titleText = 'مزامنة قيد الانتظار ($pendingSyncCount)';
+      subtitleText = 'سيتم رفع التعديلات المحلية تلقائياً عند الاتصال';
+      badgeText = 'بانتظار الرفع';
+    } else if (isOnlineMode) {
+      titleText = 'المزامنة السحابية مفعلة';
+      subtitleText = 'كافة السجلات محفوظة محلياً ومربوطة بحسابك';
+      badgeText = 'مربوط سحابياً';
+    } else {
+      titleText = 'الوضع المحلي النشط';
+      subtitleText = 'محفوظ على جهازك بالكامل بدون إنترنت';
+      badgeText = 'سجل محلي آمن';
+    }
+
+    return InkWell(
+      onTap: onSyncTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: borderColor),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? AppColors.emerald.withValues(alpha: 0.25)
+                    : const Color(0xFF6CF8BB),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                isOnlineMode ? Icons.cloud_done_rounded : Icons.cloud_off_rounded,
+                color: titleColor,
+                size: 20,
+              ),
             ),
-            child: const Icon(Icons.cloud, color: AppColors.emerald, size: 20),
-          ),
-          const SizedBox(width: 12),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'وضع عدم الاتصال نشط',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.emerald,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    titleText,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: titleColor,
+                    ),
                   ),
-                ),
-                SizedBox(height: 2),
-                Text(
-                  'تمت المزامنة محلياً بنجاح (☁️✓)',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Color(0xFF005236),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitleText,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: subtitleColor,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Text(
-              'سجل آمن 100%',
-              style: TextStyle(
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: badgeBg,
+                borderRadius: BorderRadius.circular(12),
+                border: isDark ? Border.all(color: context.appBorder) : null,
+              ),
+              child: Text(
+                badgeText,
+                style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.emerald),
+                  color: titleColor,
+                ),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import '../../../core/utils/id_generator.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../domain/entities/group_entity.dart';
 import '../../../domain/entities/expense_split_entity.dart';
@@ -63,18 +64,23 @@ class SettleMemberEvent extends GroupsEvent {
 class AddExistingMemberToGroupEvent extends GroupsEvent {
   final String memberName;
   final String? avatarUrl;
+  final String? phoneE164;
+  final String? linkedUserId;
   final String targetGroupId;
   final String? note;
 
   const AddExistingMemberToGroupEvent({
     required this.memberName,
     this.avatarUrl,
+    this.phoneE164,
+    this.linkedUserId,
     required this.targetGroupId,
     this.note,
   });
 
   @override
-  List<Object?> get props => [memberName, avatarUrl, targetGroupId, note];
+  List<Object?> get props =>
+      [memberName, avatarUrl, phoneE164, linkedUserId, targetGroupId, note];
 }
 
 // STATES
@@ -266,10 +272,12 @@ class GroupsBloc extends Bloc<GroupsEvent, GroupsState> {
   ) async {
     try {
       final newMember = GroupMemberEntity(
-        id: 'mem_${DateTime.now().millisecondsSinceEpoch}',
+        id: IdGenerator.prefixed('mem'),
         groupId: event.targetGroupId,
         name: event.memberName,
         avatarUrl: event.avatarUrl,
+        phoneE164: event.phoneE164,
+        linkedUserId: event.linkedUserId,
         balance: 0.0,
         note: event.note ?? 'تمت الإضافة من قائمة الأعضاء',
         lastActivity: 'الآن',

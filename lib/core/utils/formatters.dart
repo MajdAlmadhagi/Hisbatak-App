@@ -6,20 +6,48 @@ import 'package:intl/intl.dart';
 /// Handles solely data formatting logic cleanly separated from widgets.
 class Formatters {
   static final NumberFormat _currencyFormatter = NumberFormat('#,##0', 'en_US');
-  static final NumberFormat _decimalFormatter = NumberFormat('#,##0.00', 'en_US');
+  static final NumberFormat _decimalFormatter =
+      NumberFormat('#,##0.00', 'en_US');
+
+  static const List<String> arabicMonths = [
+    'يناير',
+    'فبراير',
+    'مارس',
+    'أبريل',
+    'مايو',
+    'يونيو',
+    'يوليو',
+    'أغسطس',
+    'سبتمبر',
+    'أكتوبر',
+    'نوفمبر',
+    'ديسمبر',
+  ];
+
+  /// Formats an amount to integer or decimal without appending a currency symbol.
+  static String formatAmount(double amount, {bool showDecimals = false}) {
+    return showDecimals
+        ? _decimalFormatter.format(amount)
+        : _currencyFormatter.format(amount.round());
+  }
 
   /// Formats an amount to integer or decimal with Arabic currency symbol.
   /// Example: 14850.0 -> "14,850 ر.س"
-  static String formatCurrency(double amount, {String currencySymbol = 'ر.س', bool showDecimals = false}) {
-    final formatted = showDecimals
-        ? _decimalFormatter.format(amount)
-        : _currencyFormatter.format(amount.round());
+  static String formatCurrency(
+    double amount, {
+    String currencySymbol = 'ر.س',
+    bool showDecimals = false,
+  }) {
+    final formatted = formatAmount(amount, showDecimals: showDecimals);
     return '$formatted $currencySymbol';
   }
 
   /// Formats positive and negative signed amounts.
   /// Example: 2400 -> "+2,400 ر.س", -340 -> "-340 ر.س"
-  static String formatSignedCurrency(double amount, {String currencySymbol = 'ر.س'}) {
+  static String formatSignedCurrency(
+    double amount, {
+    String currencySymbol = 'ر.س',
+  }) {
     final absAmount = amount.abs();
     final formatted = _currencyFormatter.format(absAmount.round());
     if (amount > 0) {
@@ -37,6 +65,11 @@ class Formatters {
     return '${percent.toStringAsFixed(1)}%';
   }
 
+  /// Formats a month and year in Arabic, e.g. "نوفمبر 2026".
+  static String formatArabicMonthYear(DateTime date) {
+    return '${arabicMonths[date.month - 1]} ${date.year}';
+  }
+
   /// Converts standard DateTime into user-friendly Arabic timestamp string.
   static String formatArabicDate(DateTime dateTime) {
     final now = DateTime.now();
@@ -52,11 +85,7 @@ class Formatters {
     } else if (itemDate == today.subtract(const Duration(days: 1))) {
       return 'أمس، $timeStr';
     } else {
-      final months = [
-        'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
-        'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
-      ];
-      return '${dateTime.day} ${months[dateTime.month - 1]}، $timeStr';
+      return '${dateTime.day} ${arabicMonths[dateTime.month - 1]}، $timeStr';
     }
   }
 }

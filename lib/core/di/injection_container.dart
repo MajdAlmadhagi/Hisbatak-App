@@ -1,6 +1,9 @@
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../database/app_database.dart';
+import '../security/app_lock_service.dart';
+import '../../data/datasources/auth/auth_remote_data_source.dart';
+import '../../data/datasources/sync/sync_service.dart';
 import '../../data/datasources/local_datasources.dart';
 import '../../data/datasources/preferences/app_preferences_data_source.dart';
 import '../../data/repositories/repository_implementations.dart';
@@ -33,6 +36,9 @@ Future<void> initDependencyInjection() async {
   sl.registerLazySingleton<IAppPreferencesDataSource>(
     () => AppPreferencesDataSourceImpl(sl()),
   );
+  sl.registerLazySingleton<IAppLockService>(
+    () => AppLockServiceImpl(sl()),
+  );
 
   // 2. Core SQLite Database
   sl.registerLazySingleton<AppDatabase>(() => AppDatabase.instance);
@@ -50,12 +56,23 @@ Future<void> initDependencyInjection() async {
   sl.registerLazySingleton<IAuthLocalDataSource>(
     () => AuthLocalDataSourceImpl(sl()),
   );
+  sl.registerLazySingleton<IAuthRemoteDataSource>(
+    () => HttpAuthRemoteDataSource(),
+  );
+  sl.registerLazySingleton<ISyncService>(
+    () => SyncServiceImpl(
+      appDatabase: sl(),
+      preferences: sl(),
+      authLocalDataSource: sl(),
+    ),
+  );
 
   // 4. Repositories
   sl.registerLazySingleton<IProfileRepository>(
     () => ProfileRepositoryImpl(
       localDataSource: sl(),
       preferencesDataSource: sl(),
+      authLocalDataSource: sl(),
     ),
   );
   sl.registerLazySingleton<IBudgetRepository>(
@@ -67,12 +84,15 @@ Future<void> initDependencyInjection() async {
   sl.registerLazySingleton<IGroupRepository>(
     () => GroupRepositoryImpl(sl()),
   );
-  sl.registerLazySingleton<IAuthRepository>(
+  sl.registerLazySingleton<AuthRepositoryImpl>(
     () => AuthRepositoryImpl(
       localDataSource: sl(),
       profileRepository: sl(),
+      remoteDataSource: sl(),
     ),
   );
+  sl.registerLazySingleton<IAuthRepository>(() => sl<AuthRepositoryImpl>());
+  sl.registerLazySingleton<ICloudAuthRepository>(() => sl<AuthRepositoryImpl>());
 
   // 4. Use Cases
   sl.registerLazySingleton(() => GetProfileUseCase(sl()));
@@ -108,6 +128,7 @@ Future<void> initDependencyInjection() async {
       getPreferredModeUseCase: sl(),
       setPreferredModeUseCase: sl(),
       logoutUseCase: sl(),
+      cloudAuthRepository: sl(),
     ),
   );
 

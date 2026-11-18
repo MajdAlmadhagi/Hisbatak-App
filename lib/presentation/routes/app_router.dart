@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 import '../pages/about/about_app_screen.dart';
 import '../pages/auth/login_screen.dart';
+import '../pages/lock/app_lock_screen.dart';
 import '../pages/auth/signup_screen.dart';
 import '../pages/main_layout/main_navigation_screen.dart';
 import '../pages/onboarding/onboarding_screen.dart';
@@ -40,6 +41,11 @@ class AppRouter {
         path: '/setup-profile',
         name: 'setup_profile',
         builder: (context, state) => const ProfileSetupScreen(),
+      ),
+      GoRoute(
+        path: '/lock',
+        name: 'lock',
+        builder: (context, state) => const AppLockScreen(),
       ),
       GoRoute(
         path: '/home',

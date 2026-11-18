@@ -4,6 +4,9 @@ import 'package:iconsax_flutter/iconsax_flutter.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/id_generator.dart';
+import '../../../../core/utils/validators.dart';
+import '../../../widgets/optional_phone_field.dart';
 import '../../../../domain/entities/group_entity.dart';
 import '../../../bloc/groups/groups_bloc.dart';
 
@@ -25,6 +28,7 @@ class CreateMemberModal extends StatefulWidget {
 class _CreateMemberModalState extends State<CreateMemberModal> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
   String? _selectedGroupId;
 
   @override
@@ -38,6 +42,7 @@ class _CreateMemberModalState extends State<CreateMemberModal> {
   @override
   void dispose() {
     _nameController.dispose();
+    _phoneController.dispose();
     super.dispose();
   }
 
@@ -58,10 +63,12 @@ class _CreateMemberModalState extends State<CreateMemberModal> {
     if (!_formKey.currentState!.validate() || _selectedGroupId == null) return;
 
     final name = _nameController.text.trim();
+    final phoneE164 = Validators.tryNormalizePhoneE164(_phoneController.text);
     final newMember = GroupMemberEntity(
-      id: 'mem_${DateTime.now().millisecondsSinceEpoch}',
+      id: IdGenerator.prefixed('mem'),
       groupId: _selectedGroupId!,
       name: name,
+      phoneE164: phoneE164,
       balance: 0.0,
       note: 'عضو جديد',
       lastActivity: 'الآن',
@@ -229,6 +236,11 @@ class _CreateMemberModalState extends State<CreateMemberModal> {
                 }
                 return null;
               },
+            ),
+            const SizedBox(height: 14),
+            OptionalPhoneField(
+              controller: _phoneController,
+              fillColor: context.appSurfaceVariant,
             ),
             const SizedBox(height: 18),
 
